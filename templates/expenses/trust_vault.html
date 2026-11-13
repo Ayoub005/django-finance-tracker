@@ -1,0 +1,706 @@
+{% extends 'expenses/base.html' %}
+{% load static %}
+
+{% block content %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+
+    #ledgerModal, #expenseModal {
+        overscroll-behavior: contain;
+    }
+
+    body { animation: globalFadeIn 0.8s ease-out forwards; }
+    @keyframes globalFadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .animate-pop-up { animation: popUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; transform: translateY(30px); }
+    @keyframes popUp { to { opacity: 1; transform: translateY(0); } }
+    .modal-enter { animation: modalDrop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; opacity: 0; transform: scale(0.9) translateY(-30px); }
+    @keyframes modalDrop { to { opacity: 1; transform: scale(1) translateY(0); } }
+
+    input[type=file]::file-selector-button { margin-right: 20px; border: none; background: #0891b2; padding: 10px 20px; border-radius: 10px; color: #fff; cursor: pointer; transition: background .2s ease-in-out; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; }
+    input[type=file]::file-selector-button:hover { background: #06b6d4; }
+    .custom-number-input::-webkit-inner-spin-button, .custom-number-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    .custom-number-input { -moz-appearance: textfield; }
+
+    input:-webkit-autofill, input:-webkit-autofill:hover, input:-webkit-autofill:focus, input:-webkit-autofill:active { transition: background-color 5000s ease-in-out 0s; -webkit-text-fill-color: inherit !important; font-family: 'Plus Jakarta Sans', sans-serif !important; caret-color: #06b6d4 !important; }
+    html.dark input:-webkit-autofill { -webkit-text-fill-color: #f8fafc !important; }
+
+    .flatpickr-calendar { backdrop-filter: blur(16px) !important; -webkit-backdrop-filter: blur(16px) !important; border-radius: 1rem !important; padding: 10px 0 !important; font-family: 'Plus Jakarta Sans', sans-serif !important; z-index: 100 !important; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3) !important; }
+    .flatpickr-calendar.arrowTop:before, .flatpickr-calendar.arrowTop:after, .flatpickr-calendar.arrowBottom:before, .flatpickr-calendar.arrowBottom:after { display: none !important; }
+    .flatpickr-calendar.arrowTop { margin-top: 12px !important; }
+    .flatpickr-calendar.arrowBottom { margin-top: -12px !important; }
+    .flatpickr-months .flatpickr-month { height: 40px !important; }
+    .flatpickr-current-month { font-size: 1.1rem !important; font-weight: 800 !important; padding-top: 4px !important; }
+    .flatpickr-current-month input.cur-year { font-weight: 700 !important; background: transparent !important; margin-left: 8px !important; }
+    .flatpickr-day { border-radius: 0.5rem !important; border: 1px solid transparent !important; font-weight: 500 !important; transition: all 0.2s ease !important; }
+
+    html:not(.dark) .flatpickr-calendar { background: rgba(255, 255, 255, 0.95) !important; border: 1px solid rgba(0, 0, 0, 0.1) !important; }
+    html.dark .flatpickr-calendar { background: rgba(15, 23, 42, 0.95) !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; }
+    html:not(.dark) .flatpickr-months .flatpickr-month, html:not(.dark) .flatpickr-current-month input.cur-year, html:not(.dark) .flatpickr-current-month { color: #1e293b !important; fill: #1e293b !important; }
+    html.dark .flatpickr-months .flatpickr-month, html.dark .flatpickr-current-month input.cur-year, html.dark .flatpickr-current-month { color: #f8fafc !important; fill: #f8fafc !important; }
+    html:not(.dark) .flatpickr-day.selected { background: #06b6d4 !important; color: #ffffff !important; border-color: #06b6d4 !important; }
+    html.dark .flatpickr-day.selected { background: #06b6d4 !important; color: #ffffff !important; border-color: #06b6d4 !important; box-shadow: 0 0 10px rgba(6, 182, 212, 0.4) !important; }
+    html:not(.dark) .flatpickr-day:hover { background: rgba(6, 182, 212, 0.1) !important; color: #0891b2 !important; border-color: rgba(6, 182, 212, 0.2) !important; }
+    html.dark .flatpickr-day:hover { background: rgba(6, 182, 212, 0.2) !important; color: #22d3ee !important; border-color: rgba(6, 182, 212, 0.3) !important; }
+
+    @media (max-width: 640px) {
+        #ledgerModal .custom-select + div button { padding: 6px 8px !important; font-size: 12px !important; border-radius: 8px !important; }
+        #ledgerModal input[type=file]::file-selector-button { padding: 4px 8px !important; margin-right: 8px !important; font-size: 10px !important; }
+    }
+
+</style>
+
+<div class="max-w-6xl mx-auto space-y-8" id="vault-dashboard">
+
+    <div class="relative z-50 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+        <div class="animate-pop-up" style="animation-delay: 100ms;">
+            <h2 class="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-600 to-blue-700 dark:from-cyan-400 dark:to-blue-500 tracking-tight">Trust Vault</h2>
+            <p class="text-gray-500 dark:text-gray-400 font-medium mt-1">Manage your peer-to-peer relationships and social ledgers.</p>
+        </div>
+
+        <div class="flex items-center gap-4 animate-pop-up" style="animation-delay: 200ms;">
+            <!-- Currency Display Selector Form -->
+            <form method="GET" action="{% url 'trust_vault' %}" class="flex items-center gap-2 relative">
+                <select name="display_currency" onchange="this.form.submit()" class="custom-select">
+                    <option value="CNY" {% if display_currency == 'CNY' %}selected{% endif %}>CNY (¥)</option>
+                    <option value="USD" {% if display_currency == 'USD' %}selected{% endif %}>USD ($)</option>
+                    <option value="EUR" {% if display_currency == 'EUR' %}selected{% endif %}>EUR (€)</option>
+                    <option value="MAD" {% if display_currency == 'MAD' %}selected{% endif %}>MAD (د.م.)</option>
+                    <option value="SGD" {% if display_currency == 'SGD' %}selected{% endif %}>SGD ($)</option>
+                </select>
+            </form>
+
+            <button type="button" id="openModalBtn" class="bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-6 py-3 rounded-xl font-bold shadow-[0_8px_30px_rgb(6,182,212,0.3)] transition-all duration-300 transform hover:-translate-y-1 hover:scale-105">
+                + New Agreement
+            </button>
+        </div>
+    </div>
+
+    <!-- Summary Metrics -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8" id="vault-metrics">
+        <div class="relative group animate-pop-up" style="animation-delay: 300ms;">
+            <div class="absolute -inset-0.5 bg-gradient-to-r from-emerald-400 to-teal-500 rounded-3xl blur opacity-20 dark:opacity-30 group-hover:opacity-70 transition duration-500"></div>
+            <div class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl p-6 rounded-3xl border border-gray-200/80 dark:border-slate-800 shadow-xl relative overflow-hidden transition-transform hover:scale-[1.02] h-full">
+                <p class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Total Owed To You</p>
+                <p class="text-3xl font-extrabold text-emerald-600 dark:text-emerald-400">{{ currency_symbol }}<span id="top-lent" class="animated-counter" data-target="{{ total_lent|stringformat:'.2f'|default:'0.00' }}">0.00</span></p>
+            </div>
+        </div>
+        <div class="relative group animate-pop-up" style="animation-delay: 400ms;">
+            <div class="absolute -inset-0.5 bg-gradient-to-r from-rose-400 to-pink-500 rounded-3xl blur opacity-20 dark:opacity-30 group-hover:opacity-70 transition duration-500"></div>
+            <div class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl p-6 rounded-3xl border border-gray-200/80 dark:border-slate-800 shadow-xl relative overflow-hidden transition-transform hover:scale-[1.02] h-full">
+                <p class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Total You Owe</p>
+                <p class="text-3xl font-extrabold text-rose-600 dark:text-rose-400">{{ currency_symbol }}<span id="top-borrowed" class="animated-counter" data-target="{{ total_borrowed|stringformat:'.2f'|default:'0.00' }}">0.00</span></p>
+            </div>
+        </div>
+        <div class="relative group animate-pop-up" style="animation-delay: 500ms;">
+            <div class="absolute -inset-0.5 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-3xl blur opacity-20 dark:opacity-30 group-hover:opacity-70 transition duration-500"></div>
+            <div class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl p-6 rounded-3xl border border-gray-200/80 dark:border-slate-800 shadow-xl relative overflow-hidden transition-transform hover:scale-[1.02] h-full">
+                <p class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Net Relationship</p>
+                <p class="text-3xl font-extrabold {% if net_balance >= 0 %}text-cyan-600 dark:text-cyan-400{% else %}text-rose-500{% endif %}">
+                    {{ currency_symbol }}<span id="top-net" class="animated-counter" data-target="{{ net_balance|stringformat:'.2f'|default:'0.00' }}">0.00</span>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- PRO MODERN LIQUIDITY MATRIX CHART -->
+    <div class="relative group animate-pop-up" style="animation-delay: 550ms;" id="vault-chart-container">
+        <div class="absolute -inset-0.5 bg-gradient-to-r from-cyan-500 via-indigo-500 to-purple-500 rounded-3xl blur-md opacity-20 dark:opacity-30 group-hover:opacity-60 transition duration-1000 group-hover:duration-300 pointer-events-none"></div>
+
+        <div class="bg-white/90 dark:bg-slate-950/90 backdrop-blur-3xl p-8 sm:p-12 rounded-3xl border border-gray-200 dark:border-slate-800 shadow-2xl relative overflow-hidden flex flex-col lg:flex-row items-center justify-between gap-12">
+
+            <div class="absolute -left-20 -top-20 w-72 h-72 bg-cyan-500/10 rounded-full blur-[80px] pointer-events-none"></div>
+            <div class="absolute -right-20 -bottom-20 w-72 h-72 bg-indigo-500/10 rounded-full blur-[80px] pointer-events-none"></div>
+
+            <div class="w-full lg:w-1/2 space-y-8 relative z-10">
+                <div class="space-y-4">
+                    <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-inner">
+                        <span class="flex h-2.5 w-2.5 relative">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-500"></span>
+                        </span>
+                        <span class="text-[10px] font-extrabold uppercase tracking-widest text-slate-500 dark:text-slate-400">Live Matrix Engine</span>
+                        <span class="text-xs text-gray-500 dark:text-gray-400 font-medium hidden sm:inline ml-2 border-l border-gray-300 dark:border-gray-700 pl-2">Display: <strong class="text-gray-900 dark:text-white">{{ display_currency }}</strong></span>
+                    </div>
+
+                    <h3 class="text-3xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-gray-900 to-gray-500 dark:from-white dark:to-gray-400 tracking-tight">
+                        Liquidity Matrix
+                    </h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 font-medium max-w-md leading-relaxed">
+                        Advanced visualization of your active peer-to-peer asset distribution. Excludes settled debts.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="bg-white/50 dark:bg-slate-900/50 backdrop-blur-lg border border-slate-200 dark:border-slate-800 rounded-2xl p-5 flex flex-col gap-1 shadow-sm transition-all hover:scale-[1.02]">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-3 h-3 rounded-full bg-purple-400 shadow-[0_0_10px_#c084fc]"></div>
+                            <span class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Active Volume</span>
+                        </div>
+                        <span class="text-2xl font-extrabold text-purple-600 dark:text-purple-400 mt-1">{{ currency_symbol }}<span id="matrix-volume">0.00</span></span>
+                    </div>
+
+                    <div class="bg-white/50 dark:bg-slate-900/50 backdrop-blur-lg border border-slate-200 dark:border-slate-800 rounded-2xl p-5 flex flex-col gap-1 shadow-sm transition-all hover:scale-[1.02]">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-3 h-3 rounded-full bg-blue-400 shadow-[0_0_10px_#60a5fa]"></div>
+                            <span class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Active Contracts</span>
+                        </div>
+                        <span class="text-2xl font-extrabold text-blue-600 dark:text-blue-400 mt-1" id="matrix-count">{{ ledgers|length }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="w-full lg:w-1/2 relative flex items-center justify-center min-h-[340px]">
+                <div class="absolute inset-0 m-auto w-[240px] h-[240px] rounded-full border border-gray-100 dark:border-slate-800/80 shadow-[inset_0_0_40px_rgba(0,0,0,0.03)] dark:shadow-[inset_0_0_50px_rgba(0,0,0,0.2)] pointer-events-none"></div>
+
+                <div class="relative w-[300px] h-[300px] z-10">
+                    <canvas id="trustChart"></canvas>
+                </div>
+
+                <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-20">
+                    <span class="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1">Net Ratio</span>
+                    <span class="text-2xl font-black {% if net_balance >= 0 %}text-cyan-600 dark:text-cyan-400{% else %}text-rose-500{% endif %}" id="chart-net-color">
+                        {{ currency_symbol }}<span id="chartCenterNet">{{ net_balance|floatformat:0|default:"0" }}</span>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Ledgers Grid -->
+    <h3 class="text-xl font-extrabold text-gray-900 dark:text-white mb-4 animate-pop-up" style="animation-delay: 600ms;">Active Agreements</h3>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12" id="vault-grid">
+        {% for ledger in ledgers %}
+        <!-- Card Frame -->
+        <div class="ledger-card bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl border border-gray-200/80 dark:border-slate-800 rounded-3xl p-6 relative h-full flex flex-col justify-between transition-transform duration-500 transform hover:-translate-y-1 animate-pop-up" style="animation-delay: {{ forloop.counter|add:'6' }}00ms;">
+
+            <div class="absolute top-4 right-4 z-20 group/menu">
+                <button class="p-2 text-gray-400 hover:text-cyan-500 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path></svg>
+                </button>
+                <div class="absolute right-0 mt-1 w-36 bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-xl shadow-xl opacity-0 invisible group-hover/menu:opacity-100 group-hover/menu:visible transition-all duration-200 overflow-hidden">
+                    <button type="button" onclick="editLedger('{{ ledger.id }}', '{{ ledger.contact.name|escapejs }}', '{{ ledger.transaction_type }}', '{{ ledger.amount }}', '{{ ledger.date|date:'Y-m-d' }}', '{{ ledger.description|escapejs }}', '{{ ledger.due_date|date:'Y-m-d'|default:'' }}')" class="w-full text-left px-4 py-2.5 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-cyan-50 dark:hover:bg-cyan-900/30 hover:text-cyan-600 transition-colors">Edit</button>
+                    <button type="button" onclick="deleteLedger('{{ ledger.id }}', this)" class="w-full text-left px-4 py-2.5 text-sm font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors">Delete</button>
+                </div>
+            </div>
+
+            <div>
+                <div class="flex items-center gap-3 mb-5 pr-8">
+                    <div class="w-12 h-12 rounded-xl flex items-center justify-center font-bold text-white shadow-lg {% if ledger.transaction_type == 'LENT' %}bg-gradient-to-br from-emerald-400 to-emerald-600{% else %}bg-gradient-to-br from-rose-400 to-rose-600{% endif %}">
+                        {{ ledger.contact.name|make_list|first|upper }}
+                    </div>
+                    <div>
+                        <h4 class="font-extrabold text-gray-900 dark:text-white text-lg">{{ ledger.contact.name }}</h4>
+                        <p class="text-xs font-semibold text-gray-500 dark:text-gray-400">{{ ledger.date|date:"M d, Y" }}</p>
+                    </div>
+                </div>
+
+                {% if ledger.transaction_type == 'LENT' %}
+                    <span class="inline-block px-3 py-1 mb-4 text-[10px] uppercase tracking-wider font-bold bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg border border-emerald-200/50">Awaiting Pay</span>
+                {% else %}
+                    <span class="inline-block px-3 py-1 mb-4 text-[10px] uppercase tracking-wider font-bold bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 rounded-lg border border-rose-200/50">You Owe</span>
+                {% endif %}
+
+                <p class="text-sm text-gray-600 dark:text-gray-300 font-medium line-clamp-2 mb-6">{{ ledger.description }}</p>
+
+                {% if ledger.receipt %}
+                <!-- SAME-PAGE RECEIPT MODAL TRIGGER -->
+                <button type="button" onclick="openReceiptModal('{{ ledger.receipt.url }}', '{{ ledger.contact.name|escapejs }} - {{ ledger.description|escapejs }}')" class="inline-flex items-center gap-1.5 text-xs font-bold text-cyan-600 dark:text-cyan-400 hover:underline mb-4 z-10 relative cursor-pointer">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
+                    View Receipt
+                </button>
+                {% endif %}
+            </div>
+
+            <div class="flex justify-between items-end border-t border-gray-100 dark:border-slate-800/80 pt-4 relative z-10">
+                <span class="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Amount</span>
+                <span class="text-2xl font-extrabold {% if ledger.transaction_type == 'LENT' %}text-emerald-500{% else %}text-rose-500{% endif %}">
+                    {{ currency_symbol }}<span class="amount-val">{{ ledger.display_amount|floatformat:2 }}</span>
+                </span>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-span-full py-16 flex flex-col items-center justify-center bg-white/40 dark:bg-slate-900/40 backdrop-blur-2xl rounded-3xl border border-dashed border-gray-300 dark:border-slate-700">
+            <h3 class="text-xl font-extrabold text-gray-900 dark:text-white">No Active Agreements</h3>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Receipt Preview Modal -->
+<div id="receiptModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md hidden items-center justify-center z-[70] p-4 transition-opacity duration-300 opacity-0">
+    <div id="receiptModalBox" class="bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl rounded-3xl shadow-2xl max-w-2xl w-full p-6 relative border border-gray-200 dark:border-slate-800 flex flex-col items-center">
+
+        <!-- Top Right Action Buttons (Download & Close) -->
+        <div class="absolute top-4 right-4 flex items-center gap-4 z-10">
+            <a id="receiptDownloadBtn" href="#" download class="text-gray-400 hover:text-cyan-500 transition-colors transform hover:scale-110" title="Download Receipt">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                </svg>
+            </a>
+            <button type="button" onclick="closeReceiptModal()" class="text-gray-400 hover:text-gray-800 dark:hover:text-white text-2xl font-bold transition-transform hover:rotate-90">
+                &times;
+            </button>
+        </div>
+
+        <h4 id="receiptTitle" class="text-lg font-extrabold text-gray-900 dark:text-white mb-4 pr-16 text-center">Receipt Preview</h4>
+
+        <div class="w-full max-h-[70vh] overflow-auto flex items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-950 p-6 min-h-[300px]">
+            <!-- Image Preview -->
+            <img id="receiptImage" src="" alt="Receipt" class="max-w-full max-h-[60vh] object-contain rounded-lg hidden">
+
+            <!-- Clean Document Fallback UI -->
+            <div id="receiptPdfFallback" class="hidden flex-col items-center justify-center text-center">
+                <div class="w-20 h-20 bg-blue-100 dark:bg-blue-500/10 rounded-2xl flex items-center justify-center mb-4 shadow-inner">
+                    <svg class="w-10 h-10 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                    </svg>
+                </div>
+                <h5 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Attached Document</h5>
+                <p class="text-gray-500 dark:text-gray-400 mb-6 text-sm max-w-sm">This file type cannot be previewed directly in the browser. Please open or download it to view.</p>
+                <a id="receiptPdfOpenBtn" href="#" target="_blank" class="bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold py-2.5 px-6 rounded-xl shadow-lg transition-transform hover:-translate-y-1 hover:shadow-cyan-500/40">
+                    Open / Download File
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal (No scrolling, completely fits on screen) -->
+<div id="ledgerModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-[60] p-3 sm:p-6 transition-opacity duration-300 opacity-0">
+
+    <div id="modalBox" class="bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl rounded-2xl sm:rounded-[2rem] shadow-2xl w-full max-w-lg p-4 sm:p-8 relative border border-gray-200 dark:border-slate-800 flex flex-col">
+
+        <button type="button" id="closeModalBtn" class="absolute top-3 right-4 sm:top-6 sm:right-6 text-gray-400 hover:text-gray-800 dark:hover:text-white text-2xl sm:text-3xl font-bold transition-transform hover:rotate-90 z-20">&times;</button>
+        <h3 id="modalTitle" class="text-xl sm:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-600 to-blue-600 dark:from-cyan-400 dark:to-blue-400 mb-3 sm:mb-6 tracking-tight">New Agreement</h3>
+
+        <form id="ledgerForm" method="POST" action="{% url 'save_ledger' %}" enctype="multipart/form-data" class="space-y-2.5 sm:space-y-4">
+            {% csrf_token %}
+            <input type="hidden" name="ledger_id" id="ledger_id" value="">
+
+            <div>
+                <label class="block text-[10px] sm:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-0.5 sm:mb-1">Contact Name</label>
+                <input type="text" name="contact_name" id="contact_name" required placeholder="Who is this with?" class="w-full bg-white/60 dark:bg-white/5 backdrop-blur-md border border-gray-200/80 dark:border-white/10 text-gray-900 dark:text-white rounded-lg sm:rounded-xl px-2.5 py-1.5 sm:px-4 sm:py-3 text-sm sm:text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-cyan-500/50">
+            </div>
+
+            <!-- Forced side-by-side on mobile -->
+            <div class="flex flex-row gap-3 sm:gap-5">
+                <div class="flex-1">
+                    <label class="block text-[10px] sm:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-0.5 sm:mb-1">Type</label>
+                    <select name="transaction_type" id="transaction_type" class="custom-select relative text-xs">
+                        <option value="LENT">Lent Money</option>
+                        <option value="BORROWED">Borrowed</option>
+                    </select>
+                </div>
+                <div class="flex-1">
+                    <label class="block text-[10px] sm:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-0.5 sm:mb-1">Amount (¥)</label>
+                    <input type="number" id="amount" step="0.01" name="amount" required class="custom-number-input w-full bg-white/60 dark:bg-white/5 backdrop-blur-md border border-gray-200/80 dark:border-white/10 text-gray-900 dark:text-white rounded-lg sm:rounded-xl px-2.5 py-1.5 sm:px-4 sm:py-3 text-sm sm:text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-cyan-500/50">
+                </div>
+            </div>
+
+            <!-- Forced side-by-side on mobile -->
+            <div class="flex flex-row gap-3 sm:gap-5">
+                <div class="flex-1">
+                    <label class="block text-[10px] sm:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-0.5 sm:mb-1">Date</label>
+                    <input type="text" id="modalDatePicker" name="date" required placeholder="Select Date" class="w-full bg-white/60 dark:bg-white/5 backdrop-blur-md border border-gray-200/80 dark:border-white/10 text-gray-900 dark:text-white rounded-lg sm:rounded-xl px-2.5 py-1.5 sm:px-4 sm:py-3 text-sm sm:text-lg font-semibold cursor-pointer focus:outline-none focus:ring-2 focus:ring-cyan-500/50">
+                </div>
+                <div class="flex-1">
+                    <label class="block text-[10px] sm:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-0.5 sm:mb-1">Due Date</label>
+                    <input type="text" id="modalDueDatePicker" name="due_date" placeholder="Optional" class="w-full bg-white/60 dark:bg-white/5 backdrop-blur-md border border-gray-200/80 dark:border-white/10 text-gray-900 dark:text-white rounded-lg sm:rounded-xl px-2.5 py-1.5 sm:px-4 sm:py-3 text-sm sm:text-lg font-semibold cursor-pointer focus:outline-none focus:ring-2 focus:ring-cyan-500/50">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-[10px] sm:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-0.5 sm:mb-1">Description</label>
+                <input type="text" name="description" id="description" required placeholder="e.g. Train tickets..." class="w-full bg-white/60 dark:bg-white/5 backdrop-blur-md border border-gray-200/80 dark:border-white/10 text-gray-900 dark:text-white rounded-lg sm:rounded-xl px-2.5 py-1.5 sm:px-4 sm:py-3 text-sm sm:text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-cyan-500/50">
+            </div>
+
+            <div>
+                <label class="block text-[10px] sm:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-0.5 sm:mb-1">Attach Receipt</label>
+                <input type="file" name="receipt" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt" class="w-full text-[10px] sm:text-sm text-gray-500 dark:text-gray-400 font-medium bg-white/60 dark:bg-white/5 backdrop-blur-md border border-gray-200/80 dark:border-white/10 rounded-lg sm:rounded-xl px-2 py-1 sm:px-4 sm:py-2 focus:outline-none">
+            </div>
+
+            <div class="pt-2 sm:pt-4">
+                <button type="submit" class="w-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-4 py-2 sm:px-8 sm:py-3 rounded-lg sm:rounded-xl font-bold text-sm sm:text-base shadow-lg transition-transform hover:-translate-y-1 hover:shadow-cyan-500/40">Save Record</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    let chartInstance = null;
+
+    function openReceiptModal(url, title) {
+        const modal = document.getElementById('receiptModal');
+        const box = document.getElementById('receiptModalBox');
+        const img = document.getElementById('receiptImage');
+        const pdfFallback = document.getElementById('receiptPdfFallback');
+        const pdfOpenBtn = document.getElementById('receiptPdfOpenBtn');
+        const titleEl = document.getElementById('receiptTitle');
+        const downloadBtn = document.getElementById('receiptDownloadBtn');
+
+        titleEl.innerText = title ? `Receipt: ${title}` : 'Receipt Preview';
+        downloadBtn.href = url;
+
+        const urlLower = url.toLowerCase();
+        const isImage = urlLower.endsWith('.png') || urlLower.endsWith('.jpg') || urlLower.endsWith('.jpeg') || urlLower.endsWith('.gif') || urlLower.endsWith('.webp');
+
+        if (isImage) {
+            pdfFallback.classList.add('hidden');
+            pdfFallback.classList.remove('flex');
+            img.classList.remove('hidden');
+            img.src = url;
+        } else {
+            img.classList.add('hidden');
+            pdfFallback.classList.remove('hidden');
+            pdfFallback.classList.add('flex');
+            pdfOpenBtn.href = url;
+        }
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        setTimeout(() => modal.classList.replace('opacity-0', 'opacity-100'), 10);
+        box.classList.add('modal-enter');
+    }
+
+    function closeReceiptModal() {
+        const modal = document.getElementById('receiptModal');
+        const box = document.getElementById('receiptModalBox');
+        modal.classList.replace('opacity-100', 'opacity-0');
+        box.classList.remove('modal-enter');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.getElementById('receiptImage').src = '';
+        }, 300);
+    }
+
+    function renderChart(lent, borrowed) {
+        const ctx = document.getElementById('trustChart').getContext('2d');
+        if(chartInstance) chartInstance.destroy();
+
+        const hasData = lent > 0 || borrowed > 0;
+        const cData = hasData ? [lent, borrowed] : [1];
+
+        const gradLent = ctx.createLinearGradient(0, 0, 0, 300);
+        gradLent.addColorStop(0, '#34d399'); gradLent.addColorStop(1, '#059669');
+        const gradBorrowed = ctx.createLinearGradient(0, 0, 0, 300);
+        gradBorrowed.addColorStop(0, '#fb7185'); gradBorrowed.addColorStop(1, '#e11d48');
+        const gradEmpty = ctx.createLinearGradient(0, 0, 0, 300);
+        gradEmpty.addColorStop(0, 'rgba(156, 163, 175, 0.15)'); gradEmpty.addColorStop(1, 'rgba(156, 163, 175, 0.05)');
+
+        const bg = hasData ? [gradLent, gradBorrowed] : [gradEmpty];
+        const hoverBg = hasData ? ['#10b981', '#f43f5e'] : ['rgba(156, 163, 175, 0.25)'];
+
+        chartInstance = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: hasData ? ['Deployed', 'Obligations'] : ['Empty Matrix'],
+                datasets: [{
+                    data: cData, backgroundColor: bg, hoverBackgroundColor: hoverBg,
+                    borderColor: 'transparent', borderWidth: 0, hoverOffset: 12, borderRadius: 20, spacing: 2
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false, cutout: '84%', layout: { padding: 25 },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        enabled: hasData, backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                        titleFont: { family: "'Plus Jakarta Sans', sans-serif", size: 13 },
+                        bodyFont: { family: "'Plus Jakarta Sans', sans-serif", size: 16, weight: 'bold' },
+                        padding: 14, cornerRadius: 12, displayColors: true,
+                        callbacks: { label: function(context) { return ' {{ currency_symbol }}' + context.raw.toFixed(2); } }
+                    }
+                },
+                animation: { animateScale: true, animateRotate: true, duration: 2000, easing: 'easeOutExpo' }
+            }
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const initLent = parseFloat(document.getElementById('top-lent').getAttribute('data-target')) || 0;
+        const initBorrowed = parseFloat(document.getElementById('top-borrowed').getAttribute('data-target')) || 0;
+        document.getElementById('matrix-volume').innerText = (initLent + initBorrowed).toFixed(2);
+
+        animateCounters();
+        renderChart(initLent, initBorrowed);
+
+        const picker = flatpickr("#modalDatePicker", { defaultDate: "today", dateFormat: "Y-m-d", disableMobile: true, monthSelectorType: "static" });
+        // NEW: Initialize the Due Date picker (no default date)
+        const duePicker = flatpickr("#modalDueDatePicker", { dateFormat: "Y-m-d", disableMobile: true, monthSelectorType: "static" });
+
+        document.getElementById('openModalBtn').addEventListener('click', () => {
+            document.getElementById('ledgerForm').reset();
+            document.getElementById('ledger_id').value = '';
+            document.getElementById('modalTitle').innerText = 'New Agreement';
+
+            const typeSelect = document.getElementById('transaction_type');
+            const typeWrapper = typeSelect.parentElement;
+            if (typeWrapper && typeWrapper.querySelector('button span')) {
+                typeWrapper.querySelector('button span').innerText = typeSelect.options[typeSelect.selectedIndex].text;
+            }
+
+            picker.setDate("today");
+            duePicker.clear(); // NEW: Clear the due date when opening a new form
+            toggleModal(true);
+        });
+
+        document.getElementById('closeModalBtn').addEventListener('click', () => toggleModal(false));
+    });
+
+    function toggleModal(show) {
+        const overlay = document.getElementById('ledgerModal');
+        const box = document.getElementById('modalBox');
+        if (show) {
+            overlay.classList.remove('hidden'); overlay.classList.add('flex');
+            setTimeout(() => overlay.classList.replace('opacity-0', 'opacity-100'), 10);
+            box.classList.add('modal-enter');
+
+            // FREEZE BACKGROUND COMPLETELY
+            document.body.style.overflow = 'hidden';
+            overlay.addEventListener('touchmove', preventScroll, { passive: false });
+        } else {
+            overlay.classList.replace('opacity-100', 'opacity-0');
+            box.classList.remove('modal-enter');
+            setTimeout(() => {
+                overlay.classList.add('hidden');
+                overlay.classList.remove('flex');
+                document.body.style.overflow = '';
+                overlay.removeEventListener('touchmove', preventScroll);
+            }, 300);
+        }
+    }
+
+    function preventScroll(e) {
+        // Only prevent if touching the dark backdrop, let the modal box stay touchable if needed
+        if (e.target.id === 'ledgerModal' || e.target.id === 'expenseModal') {
+            e.preventDefault();
+        }
+    }
+
+    function editLedger(id, name, type, baseAmount, date, desc, dueDate) {
+        document.getElementById('ledger_id').value = id;
+        document.getElementById('contact_name').value = name;
+
+        const typeSelect = document.getElementById('transaction_type');
+        typeSelect.value = type;
+        const typeWrapper = typeSelect.parentElement;
+        if (typeWrapper && typeWrapper.querySelector('button span')) {
+            typeWrapper.querySelector('button span').innerText = typeSelect.options[typeSelect.selectedIndex].text;
+        }
+
+        document.getElementById('amount').value = parseFloat(baseAmount.replace(/,/g, '')).toFixed(2);
+        document.getElementById('description').value = desc;
+
+        // Set both calendars
+        document.getElementById('modalDatePicker')._flatpickr.setDate(date);
+        if (dueDate) {
+            document.getElementById('modalDueDatePicker')._flatpickr.setDate(dueDate);
+        } else {
+            document.getElementById('modalDueDatePicker')._flatpickr.clear();
+        }
+
+        document.getElementById('modalTitle').innerText = 'Edit Agreement';
+        toggleModal(true);
+    }
+
+    document.getElementById('ledgerForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        toggleModal(false);
+
+        const mainContent = document.getElementById('vault-dashboard');
+        mainContent.style.opacity = '0.5';
+
+        fetch(this.action, { method: 'POST', body: new FormData(this) })
+        .then(res => {
+            // Reload the page while preserving the current currency GET parameters
+            if(res.ok) { return fetch(window.location.href); }
+        })
+        .then(res => res.text())
+        .then(html => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+
+            document.getElementById('vault-metrics').innerHTML = doc.getElementById('vault-metrics').innerHTML;
+            document.getElementById('vault-grid').innerHTML = doc.getElementById('vault-grid').innerHTML;
+
+            const newLent = parseFloat(doc.getElementById('top-lent').getAttribute('data-target')) || 0;
+            const newBorrowed = parseFloat(doc.getElementById('top-borrowed').getAttribute('data-target')) || 0;
+            const newNet = newLent - newBorrowed;
+
+            document.getElementById('matrix-volume').innerText = (newLent + newBorrowed).toFixed(2);
+            document.getElementById('matrix-count').innerText = doc.querySelectorAll('.ledger-card').length;
+            document.getElementById('chartCenterNet').innerText = Math.abs(newNet).toFixed(0);
+
+            const netColorElement = document.getElementById('chart-net-color');
+            netColorElement.className = newNet >= 0 ? "text-2xl font-black text-cyan-600 dark:text-cyan-400" : "text-2xl font-black text-rose-500";
+
+            mainContent.style.opacity = '1';
+            animateCounters();
+            renderChart(newLent, newBorrowed);
+        });
+    });
+
+    function deleteLedger(id, btn) {
+        const card = btn.closest('.ledger-card');
+        const amountText = card.querySelector('.amount-val').innerText.replace(/,/g, '');
+        const amount = parseFloat(amountText);
+        const isLent = card.innerHTML.includes('Awaiting Pay') || card.innerHTML.includes('LENT');
+
+        let lentEl = document.getElementById('top-lent');
+        let borrowedEl = document.getElementById('top-borrowed');
+        let netEl = document.getElementById('top-net');
+
+        let currentLent = parseFloat(lentEl.getAttribute('data-target')) || 0;
+        let currentBorrowed = parseFloat(borrowedEl.getAttribute('data-target')) || 0;
+
+        if (isLent) {
+            currentLent = Math.max(0, currentLent - amount);
+        } else {
+            currentBorrowed = Math.max(0, currentBorrowed - amount);
+        }
+        let currentNet = currentLent - currentBorrowed;
+
+        lentEl.setAttribute('data-target', currentLent);
+        borrowedEl.setAttribute('data-target', currentBorrowed);
+        netEl.setAttribute('data-target', currentNet);
+
+        document.getElementById('matrix-volume').innerText = (currentLent + currentBorrowed).toFixed(2);
+        let countEl = document.getElementById('matrix-count');
+        countEl.innerText = Math.max(0, parseInt(countEl.innerText) - 1);
+
+        document.getElementById('chartCenterNet').innerText = Math.abs(currentNet).toFixed(0);
+        const netColorElement = document.getElementById('chart-net-color');
+        netColorElement.className = currentNet >= 0 ? "text-2xl font-black text-cyan-600 dark:text-cyan-400" : "text-2xl font-black text-rose-500";
+
+        animateCounters();
+        renderChart(currentLent, currentBorrowed);
+
+        card.style.opacity = '1';
+        card.style.transform = 'translateX(0)';
+        card.style.animation = 'none';
+        void card.offsetWidth;
+        card.style.transition = 'all 0.5s cubic-bezier(0.16, 1, 0.3, 1)';
+
+        card.style.setProperty('background-color', 'rgba(239, 68, 68, 0.4)', 'important');
+        card.style.setProperty('border-color', 'rgba(239, 68, 68, 0.6)', 'important');
+
+        setTimeout(() => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateX(-100px)';
+        }, 50);
+
+        setTimeout(() => { card.remove(); }, 500);
+
+        fetch(`/vault/delete/${id}/`);
+    }
+
+    function animateCounters() {
+        document.querySelectorAll('.animated-counter').forEach(counter => {
+            const targetValue = parseFloat(counter.getAttribute('data-target')) || 0;
+            const currentText = counter.textContent.replace(/,/g, '');
+            const startValue = parseFloat(currentText) || 0;
+
+            if (startValue === targetValue && targetValue !== 0) return;
+
+            const duration = 3500;
+            const startTime = performance.now();
+            counter.classList.add('tabular-nums');
+
+            function updateCounter(currentTime) {
+                const elapsedTime = currentTime - startTime;
+                const progress = Math.min(elapsedTime / duration, 1);
+                const easeOut = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+                const currentValue = startValue + ((targetValue - startValue) * easeOut);
+
+                const blurAmount = (1 - easeOut) * 2;
+                counter.style.filter = `blur(${blurAmount}px)`;
+                counter.textContent = currentValue.toFixed(2);
+
+                if (progress < 1) {
+                    requestAnimationFrame(updateCounter);
+                } else {
+                    counter.textContent = targetValue.toFixed(2);
+                    counter.style.filter = 'blur(0px)';
+                }
+            }
+            requestAnimationFrame(updateCounter);
+        });
+    }
+</script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const selects = document.querySelectorAll('select.custom-select');
+        selects.forEach(select => {
+            select.style.display = 'none';
+            const wrapper = document.createElement('div');
+            wrapper.className = 'relative inline-block w-full z-50';
+            if (select.closest('form') && select.closest('form').getAttribute('method') === 'GET') { wrapper.classList.add('sm:w-auto', 'min-w-[140px]'); }
+            select.parentNode.insertBefore(wrapper, select);
+            wrapper.appendChild(select);
+
+            const activeOption = select.options[select.selectedIndex]?.text || 'Select...';
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'flex items-center justify-between w-full bg-white/60 dark:bg-white/5 backdrop-blur-xl border border-gray-200/80 dark:border-white/10 text-gray-800 dark:text-gray-200 px-4 py-3 text-lg rounded-xl shadow-sm hover:shadow-md focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/50 transition-all font-semibold';
+            button.innerHTML = `<span class="truncate pr-2 pointer-events-none">${activeOption}</span> <svg class="w-4 h-4 text-cyan-500 transition-transform duration-300 flex-shrink-0 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>`;
+
+            const menu = document.createElement('ul');
+            menu.className = 'absolute z-[100] w-full mt-2 bg-white/95 dark:bg-slate-800/95 backdrop-blur-3xl border border-gray-200/50 dark:border-white/10 rounded-xl shadow-2xl opacity-0 invisible translate-y-[-10px] transition-all duration-300 flex flex-col p-1.5 max-h-64 overflow-y-auto transform-gpu';
+
+            Array.from(select.options).forEach(option => {
+                const li = document.createElement('li');
+                li.className = 'px-3 py-2.5 rounded-lg cursor-pointer text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-cyan-500/10 hover:text-cyan-600 dark:hover:bg-cyan-500/20 dark:hover:text-cyan-300 transition-all flex items-center justify-between';
+                li.innerText = option.text;
+                if (option.selected) { li.classList.add('bg-cyan-500/10', 'text-cyan-600', 'dark:text-cyan-400'); }
+
+                li.onclick = (e) => {
+                    e.stopPropagation();
+                    select.value = option.value;
+                    button.querySelector('span').innerText = option.text;
+                    Array.from(menu.children).forEach(child => child.classList.remove('bg-cyan-500/10', 'text-cyan-600', 'dark:text-cyan-400'));
+                    li.classList.add('bg-cyan-500/10', 'text-cyan-600', 'dark:text-cyan-400');
+                    menu.classList.add('opacity-0', 'invisible', 'translate-y-[-10px]');
+                    button.querySelector('svg').classList.remove('rotate-180');
+                    menu.classList.remove('is-open');
+                    wrapper.style.zIndex = '50';
+                    if (select.getAttribute('onchange') && select.form) { select.form.submit(); } else { select.dispatchEvent(new Event('change')); }
+                };
+                menu.appendChild(li);
+            });
+            wrapper.appendChild(button);
+            wrapper.appendChild(menu);
+
+            button.onclick = (e) => {
+                e.stopPropagation();
+                const isClosed = menu.classList.contains('opacity-0');
+                document.querySelectorAll('.is-open').forEach(m => {
+                    m.classList.add('opacity-0', 'invisible', 'translate-y-[-10px]');
+                    m.previousElementSibling.querySelector('svg').classList.remove('rotate-180');
+                    m.classList.remove('is-open');
+                    m.parentElement.style.zIndex = '50';
+                });
+                if (isClosed) {
+                    menu.classList.remove('opacity-0', 'invisible', 'translate-y-[-10px]');
+                    button.querySelector('svg').classList.add('rotate-180');
+                    menu.classList.add('is-open');
+                    wrapper.style.zIndex = '60';
+                }
+            };
+        });
+        document.addEventListener('click', () => {
+            document.querySelectorAll('.is-open').forEach(menu => {
+                menu.classList.add('opacity-0', 'invisible', 'translate-y-[-10px]');
+                menu.previousElementSibling.querySelector('svg').classList.remove('rotate-180');
+                menu.classList.remove('is-open');
+                menu.parentElement.style.zIndex = '50';
+            });
+        });
+    });
+</script>
+{% endblock %}

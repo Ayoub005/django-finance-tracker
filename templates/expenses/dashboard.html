@@ -1,0 +1,1136 @@
+{% extends 'expenses/base.html' %}
+{% block content %}
+
+<!-- Include Flatpickr library -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/style.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/index.js"></script>
+
+<!-- PAGE TRANSITIONS & STAGGERED LOADING CSS -->
+<style>
+
+    #expenseModal {
+        overscroll-behavior: contain;
+    }
+    /* Smooth Page Fade-In */
+    body { animation: globalFadeIn 0.8s ease-out forwards; }
+    @keyframes globalFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    /* Staggered Card Entrance */
+    .animate-pop-up { animation: popUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; transform: translateY(30px); }
+    @keyframes popUp { to { opacity: 1; transform: translateY(0); } }
+
+    /* Staggered Table Rows */
+    .animate-slide-in { animation: slideIn 0.5s ease-out forwards; opacity: 0; transform: translateX(-20px); }
+    @keyframes slideIn { to { opacity: 1; transform: translateX(0); } }
+
+    /* SMOOTH MODAL DROP CSS */
+    .modal-enter { animation: modalDrop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; opacity: 0; transform: scale(0.9) translateY(-30px); }
+    @keyframes modalDrop { to { opacity: 1; transform: scale(1) translateY(0); } }
+
+    /* TRUST VAULT STYLE FILE INPUT BUTTON */
+    input[type=file]::file-selector-button { margin-right: 20px; border: none; background: #0891b2; padding: 10px 20px; border-radius: 10px; color: #fff; cursor: pointer; transition: background .2s ease-in-out; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; }
+    input[type=file]::file-selector-button:hover { background: #06b6d4; }
+
+    /* Fix Browser Autofill */
+    input:-webkit-autofill, input:-webkit-autofill:hover,
+    input:-webkit-autofill:focus, input:-webkit-autofill:active {
+        transition: background-color 5000s ease-in-out 0s;
+        -webkit-text-fill-color: inherit !important;
+        font-family: 'Plus Jakarta Sans', sans-serif !important;
+        caret-color: #06b6d4 !important;
+    }
+    html.dark input:-webkit-autofill { -webkit-text-fill-color: #f8fafc !important; }
+
+    /* HIDE NATIVE NUMBER SPINNERS */
+    .custom-number-input::-webkit-inner-spin-button, .custom-number-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    .custom-number-input { -moz-appearance: textfield; }
+
+    /* === PRO FLATPICKR BASE STRUCTURAL STYLES === */
+    .flatpickr-calendar {
+        backdrop-filter: blur(16px) !important;
+        -webkit-backdrop-filter: blur(16px) !important;
+        border-radius: 1rem !important;
+        padding: 10px 0 !important;
+        font-family: 'Plus Jakarta Sans', sans-serif !important;
+        z-index: 100 !important; /* Above modal */
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3) !important;
+    }
+    .flatpickr-calendar.arrowTop:before, .flatpickr-calendar.arrowTop:after,
+    .flatpickr-calendar.arrowBottom:before, .flatpickr-calendar.arrowBottom:after { display: none !important; }
+    .flatpickr-calendar.arrowTop {
+        margin-top: 12px !important;
+    }
+    .flatpickr-calendar.arrowBottom {
+        margin-top: -12px !important;
+    }
+    .flatpickr-months .flatpickr-month { height: 40px !important; }
+    .flatpickr-current-month { font-size: 1.1rem !important; font-weight: 800 !important; padding-top: 4px !important; }
+    .flatpickr-current-month input.cur-year { font-weight: 700 !important; background: transparent !important; margin-left: 8px !important; }
+    .flatpickr-day { border-radius: 0.5rem !important; border: 1px solid transparent !important; font-weight: 500 !important; transition: all 0.2s ease !important; }
+
+    /* === LIGHT MODE FLATPICKR === */
+    html:not(.dark) .flatpickr-calendar { background: rgba(255, 255, 255, 0.95) !important; border: 1px solid rgba(0, 0, 0, 0.1) !important; }
+    html:not(.dark) .flatpickr-months .flatpickr-month,
+    html:not(.dark) .flatpickr-current-month input.cur-year,
+    html:not(.dark) .flatpickr-current-month { color: #1e293b !important; fill: #1e293b !important; }
+    html:not(.dark) .numInputWrapper:hover { background: rgba(0, 0, 0, 0.05) !important; border-radius: 0.5rem; }
+    html:not(.dark) .flatpickr-current-month .numInputWrapper span.arrowUp:after { border-bottom-color: #64748b !important; }
+    html:not(.dark) .flatpickr-current-month .numInputWrapper span.arrowDown:after { border-top-color: #64748b !important; }
+    html:not(.dark) .flatpickr-current-month .numInputWrapper span.arrowUp:hover:after { border-bottom-color: #0891b2 !important; }
+    html:not(.dark) .flatpickr-current-month .numInputWrapper span.arrowDown:hover:after { border-top-color: #0891b2 !important; }
+    html:not(.dark) span.flatpickr-weekday { color: #64748b !important; font-weight: 700 !important; }
+    html:not(.dark) .flatpickr-day { color: #334155 !important; }
+    html:not(.dark) .flatpickr-day:hover, html:not(.dark) .flatpickr-day:focus { background: rgba(6, 182, 212, 0.1) !important; color: #0891b2 !important; border-color: rgba(6, 182, 212, 0.2) !important; }
+    html:not(.dark) .flatpickr-day.selected { background: #06b6d4 !important; color: #ffffff !important; border-color: #06b6d4 !important; box-shadow: 0 0 10px rgba(6, 182, 212, 0.3) !important; }
+    html:not(.dark) .flatpickr-day.today { border-color: rgba(0, 0, 0, 0.1) !important; }
+    html:not(.dark) .flatpickr-day.today:hover { border-color: #06b6d4 !important; }
+    html:not(.dark) .flatpickr-prev-month, html:not(.dark) .flatpickr-next-month { fill: #64748b !important; }
+    html:not(.dark) .flatpickr-prev-month:hover svg, html:not(.dark) .flatpickr-next-month:hover svg { fill: #0891b2 !important; }
+
+    /* === DARK MODE FLATPICKR === */
+    html.dark .flatpickr-calendar { background: rgba(15, 23, 42, 0.95) !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; }
+    html.dark .flatpickr-months .flatpickr-month,
+    html.dark .flatpickr-current-month input.cur-year,
+    html.dark .flatpickr-current-month { color: #f8fafc !important; fill: #f8fafc !important; }
+    html.dark .numInputWrapper:hover { background: rgba(255, 255, 255, 0.05) !important; border-radius: 0.5rem; }
+    html.dark .flatpickr-current-month .numInputWrapper span.arrowUp:after { border-bottom-color: #94a3b8 !important; }
+    html.dark .flatpickr-current-month .numInputWrapper span.arrowDown:after { border-top-color: #94a3b8 !important; }
+    html.dark .flatpickr-current-month .numInputWrapper span.arrowUp:hover:after { border-bottom-color: #22d3ee !important; }
+    html.dark .flatpickr-current-month .numInputWrapper span.arrowDown:hover:after { border-top-color: #22d3ee !important; }
+    html.dark span.flatpickr-weekday { color: #94a3b8 !important; font-weight: 700 !important; }
+    html.dark .flatpickr-day { color: #cbd5e1 !important; }
+    html.dark .flatpickr-day:hover, html.dark .flatpickr-day:focus { background: rgba(6, 182, 212, 0.2) !important; color: #22d3ee !important; border-color: rgba(6, 182, 212, 0.3) !important; }
+    html.dark .flatpickr-day.selected { background: #06b6d4 !important; color: #ffffff !important; border-color: #06b6d4 !important; box-shadow: 0 0 10px rgba(6, 182, 212, 0.4) !important; }
+    html.dark .flatpickr-day.today { border-color: rgba(255, 255, 255, 0.2) !important; }
+    html.dark .flatpickr-day.today:hover { border-color: #06b6d4 !important; }
+    html.dark .flatpickr-prev-month, html.dark .flatpickr-next-month { fill: #94a3b8 !important; }
+    html.dark .flatpickr-prev-month:hover svg, html.dark .flatpickr-next-month:hover svg { fill: #22d3ee !important; }
+</style>
+
+<div class="max-w-6xl mx-auto">
+
+    <!-- Top Bar: Title & Filters -->
+    <div class="relative z-50 flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+        <h2 class="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight animate-pop-up" style="animation-delay: 100ms;">Financial Dashboard</h2>
+
+        <div id="top-filters-container" class="flex flex-wrap justify-center items-center gap-4 w-full md:w-auto mt-4 md:mt-0 animate-pop-up" style="animation-delay: 200ms;">
+
+            <!-- Currency Display Selector Form -->
+            <form method="GET" action="{% url 'dashboard' %}" class="flex items-center gap-2 relative">
+                {% if selected_month %}
+                <input type="hidden" name="month" value="{{ selected_month }}">
+                {% endif %}
+                <select name="display_currency" onchange="this.form.submit()" class="custom-select">
+                    <option value="CNY" {% if display_currency == 'CNY' %}selected{% endif %}>CNY (¥)</option>
+                    <option value="USD" {% if display_currency == 'USD' %}selected{% endif %}>USD ($)</option>
+                    <option value="EUR" {% if display_currency == 'EUR' %}selected{% endif %}>EUR (€)</option>
+                    <option value="MAD" {% if display_currency == 'MAD' %}selected{% endif %}>MAD (د.م.)</option>
+                    <option value="SGD" {% if display_currency == 'SGD' %}selected{% endif %}>SGD ($)</option>
+                </select>
+            </form>
+
+            {% if available_months %}
+                <form method="GET" action="{% url 'dashboard' %}" class="flex items-center gap-2 relative">
+                    <input type="hidden" name="display_currency" value="{{ display_currency }}">
+
+                    <select name="month" onchange="this.form.submit()" class="custom-select relative text-xs">
+                        <!-- Send 'all' instead of empty value -->
+                        <option value="all" {% if selected_month == 'all' %}selected{% endif %}>All Months</option>
+
+                        {% for m in available_months %}
+                            <option value="{{ m|date:'Y-m' }}" {% if selected_month == m|date:'Y-m' %}selected{% endif %}>
+                                {{ m|date:'F Y' }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </form>
+            {% endif %}
+
+            <button type="button" onclick="openExportModal()" class="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-4 py-2.5 rounded-xl font-semibold shadow-lg shadow-indigo-500/20 transition-all duration-300 transform hover:-translate-y-1 hover:scale-105 hover:shadow-xl">
+                Export Data
+            </button>
+
+            <form method="POST" action="{% url 'logout' %}" class="inline">
+                {% csrf_token %}
+                <button type="submit" class="bg-gray-200 dark:bg-slate-800 text-gray-700 dark:text-gray-300 px-4 py-2.5 rounded-xl font-semibold shadow transition-all duration-300 transform hover:-translate-y-1 hover:scale-105 hover:bg-gray-300 dark:hover:bg-slate-700">
+                    Logout
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Summary Metric Cards (Glassmorphism & Unique Glow Accents) -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+
+        <!-- Total Spent Card -->
+        <div class="relative group animate-pop-up" style="animation-delay: 300ms;">
+            <div class="absolute -inset-0.5 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-3xl blur opacity-20 dark:opacity-30 group-hover:opacity-70 transition duration-500 pointer-events-none"></div>
+            <div class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl p-6 rounded-3xl border border-gray-200/80 dark:border-slate-800 shadow-xl relative overflow-hidden transition-transform hover:scale-[1.02] h-full flex flex-col justify-center">
+                <div class="absolute -right-6 -bottom-6 w-24 h-24 bg-cyan-500/20 rounded-full blur-2xl pointer-events-none"></div>
+                <div class="flex items-center justify-between mb-2">
+                    <p class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Total Spent (Period)</p>
+                    <div class="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_8px_#22d3ee]"></div>
+                </div>
+                <p class="text-3xl font-extrabold text-gray-900 dark:text-white">{{ currency_symbol }}<span class="animated-counter" data-target="{{ total_spent }}">1000.00</span></p>
+            </div>
+        </div>
+
+        <!-- Daily Average Card -->
+        <div class="relative group animate-pop-up" style="animation-delay: 400ms;">
+            <div class="absolute -inset-0.5 bg-gradient-to-r from-indigo-400 to-purple-500 rounded-3xl blur opacity-20 dark:opacity-30 group-hover:opacity-70 transition duration-500 pointer-events-none"></div>
+            <div class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl p-6 rounded-3xl border border-gray-200/80 dark:border-slate-800 shadow-xl relative overflow-hidden transition-transform hover:scale-[1.02] h-full flex flex-col justify-center">
+                <div class="absolute -right-6 -bottom-6 w-24 h-24 bg-indigo-500/20 rounded-full blur-2xl pointer-events-none"></div>
+                <div class="flex items-center justify-between mb-2">
+                    <p class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Daily Average</p>
+                    <div class="w-2 h-2 rounded-full bg-indigo-400 shadow-[0_0_8px_#818cf8]"></div>
+                </div>
+                <p class="text-3xl font-extrabold text-gray-900 dark:text-white">{{ currency_symbol }}<span class="animated-counter" data-target="{{ daily_average }}">1000.00</span></p>
+            </div>
+        </div>
+
+        <!-- Top Spending Category Card -->
+        <div class="relative group animate-pop-up" style="animation-delay: 500ms;">
+            <div class="absolute -inset-0.5 bg-gradient-to-r from-emerald-400 to-teal-500 rounded-3xl blur opacity-20 dark:opacity-30 group-hover:opacity-70 transition duration-500 pointer-events-none"></div>
+            <div class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl p-6 rounded-3xl border border-gray-200/80 dark:border-slate-800 shadow-xl relative overflow-hidden transition-transform hover:scale-[1.02] h-full flex flex-col justify-center">
+                <div class="absolute -right-6 -bottom-6 w-24 h-24 bg-emerald-500/20 rounded-full blur-2xl pointer-events-none"></div>
+                <div class="flex items-center justify-between mb-2">
+                    <p class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Top Spending Category</p>
+                    <div class="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]"></div>
+                </div>
+                <p class="text-2xl font-extrabold text-gray-900 dark:text-white truncate pr-2">{{ highest_category }}</p>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Cybernetic AI Financial Matrix Banner -->
+    <div class="mb-8 relative group animate-pop-up" style="animation-delay: 550ms;">
+        <div class="absolute -inset-0.5 bg-gradient-to-r from-cyan-500 via-indigo-500 to-emerald-500 rounded-3xl blur-md opacity-20 dark:opacity-30 group-hover:opacity-60 transition duration-1000 group-hover:duration-200 animate-tilt pointer-events-none"></div>
+
+        <div class="relative p-6 sm:p-8 bg-white/80 dark:bg-slate-950/90 backdrop-blur-2xl rounded-3xl border border-gray-200/80 dark:border-slate-800 shadow-xl dark:shadow-2xl overflow-hidden transition-colors duration-300">
+            <div class="absolute top-0 right-0 w-96 h-96 bg-cyan-500/10 rounded-full blur-[100px] pointer-events-none"></div>
+            <div class="absolute bottom-0 left-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-[100px] pointer-events-none"></div>
+
+            <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative z-10">
+                <div class="space-y-2">
+                    <div class="flex items-center gap-3">
+                        <span class="relative flex h-3 w-3">
+                          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+                          <span class="relative inline-flex rounded-full h-3 w-3 bg-cyan-500 shadow-[0_0_12px_#06b6d4]"></span>
+                        </span>
+                        <span class="text-xs font-extrabold uppercase tracking-widest text-cyan-700 dark:text-cyan-400 bg-cyan-100 dark:bg-cyan-950/80 px-3 py-1 rounded-full border border-cyan-200 dark:border-cyan-800/50">
+                            Neural Engine Active
+                        </span>
+                        <span class="text-xs text-gray-500 dark:text-gray-400 font-medium hidden sm:inline">Currency Base: <strong class="text-gray-900 dark:text-white">{{ display_currency }}</strong></span>
+                    </div>
+
+                    <h2 class="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-white dark:via-gray-200 dark:to-gray-400 tracking-tight">
+                        Financial Command Center
+                    </h2>
+
+                    <p class="text-sm text-gray-600 dark:text-gray-400 max-w-xl leading-relaxed">
+                        Real-time multi-currency tracking engine synchronized. Pacing is optimal across active accounts for this period.
+                    </p>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto pt-4 lg:pt-0 border-t lg:border-t-0 border-gray-200 dark:border-slate-800">
+                    <div class="bg-gray-50/80 dark:bg-slate-900/80 backdrop-blur-md border border-gray-200 dark:border-slate-800 rounded-2xl px-4 py-3 flex items-center gap-3 shadow-inner">
+                        <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_#34d399]"></div>
+                        <div class="text-left">
+                            <div class="text-[10px] uppercase font-bold text-gray-400 dark:text-gray-500 tracking-wider">Sync State</div>
+                            <div class="text-xs font-bold text-gray-900 dark:text-white">Live & Secured</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-50/80 dark:bg-slate-900/80 backdrop-blur-md border border-gray-200 dark:border-slate-800 rounded-2xl px-4 py-3 flex items-center gap-3 shadow-inner">
+                        <div class="w-2.5 h-2.5 rounded-full bg-indigo-500 shadow-[0_0_8px_#818cf8]"></div>
+                        <div class="text-left">
+                            <div class="text-[10px] uppercase font-bold text-gray-400 dark:text-gray-500 tracking-wider">Active Vault</div>
+                            <div class="text-xs font-bold text-gray-900 dark:text-white">{{ display_currency }} Node</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Web Chart Container -->
+    <div class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl p-6 sm:p-8 rounded-3xl border border-gray-200/80 dark:border-slate-800 shadow-xl mb-8 relative overflow-hidden animate-pop-up" style="animation-delay: 600ms;">
+        <div class="absolute -left-10 -top-10 w-48 h-48 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <h3 class="text-xl font-extrabold text-gray-900 dark:text-white mb-4 relative z-10">Expenses by Category</h3>
+        <div class="relative h-72 z-10">
+            <canvas id="expenseChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Live Search Bar -->
+    <div class="mb-6 animate-pop-up" style="animation-delay: 650ms;">
+        <form method="GET" action="{% url 'dashboard' %}" id="searchForm" class="relative flex items-center bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl border border-gray-200/80 dark:border-slate-800 rounded-2xl shadow-xl focus-within:ring-2 focus-within:ring-cyan-500 transition-all duration-300">
+            {% if selected_month %}
+            <input type="hidden" name="month" value="{{ selected_month }}">
+            {% endif %}
+            <input type="hidden" name="display_currency" value="{{ display_currency }}">
+
+            <div class="pl-5 flex items-center pointer-events-none">
+                <svg class="w-6 h-6 text-cyan-600 dark:text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+            </div>
+
+            <input type="text" name="search" id="searchInput" value="{{ search_query }}"
+                   placeholder="Search transactions, categories, or notes..."
+                   class="w-full bg-transparent text-gray-900 dark:text-white text-lg pl-4 pr-4 py-4 focus:outline-none border-0 shadow-none focus:ring-0">
+        </form>
+    </div>
+
+    <!-- Recent Transactions Table Container -->
+    <div class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl p-6 sm:p-8 rounded-3xl border border-gray-200/80 dark:border-slate-800 shadow-xl animate-pop-up relative overflow-hidden" style="animation-delay: 700ms;">
+        <div class="absolute -right-10 -bottom-10 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <h3 class="text-xl font-extrabold text-gray-900 dark:text-white mb-4 relative z-10">Transactions</h3>
+
+        <div class="block w-full max-w-full overflow-x-auto rounded-2xl border border-gray-200 dark:border-slate-800 shadow-sm relative z-10">
+            <table class="w-full text-left border-collapse min-w-[600px]">
+                <thead>
+                    <tr class="bg-gray-50/80 dark:bg-slate-800/80 border-b border-gray-200 dark:border-slate-800 text-gray-600 dark:text-gray-300 text-sm tracking-wide uppercase">
+                        <th class="p-4 font-semibold">Date</th>
+                        <th class="p-4 font-semibold">Details</th>
+                        <th class="p-4 font-semibold">Amount</th>
+                        <th class="p-4 font-semibold">Method</th>
+                        <th class="p-4 font-semibold text-center">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for exp in expenses %}
+                    <tr class="border-b border-gray-100 dark:border-slate-800/60 hover:bg-gray-50/50 dark:hover:bg-slate-800/50 transition-colors animate-slide-in text-gray-700 dark:text-gray-300" style="animation-delay: {{ forloop.counter }}00ms;">
+                        <td class="p-4 whitespace-nowrap">{{ exp.date }}</td>
+                        <td class="p-4">
+                            <div class="text-gray-900 dark:text-white font-bold">{{ exp.category }}</div>
+                            <div class="mt-1 flex flex-wrap items-center gap-2">
+                                {% if exp.project and exp.project != 'None' and exp.project != '' %}
+                                    <span class="bg-cyan-50 dark:bg-cyan-950/60 text-cyan-700 dark:text-cyan-400 text-[11px] px-2.5 py-0.5 rounded-full font-semibold border border-cyan-200 dark:border-cyan-800/50">
+                                        {{ exp.project }}
+                                    </span>
+                                {% endif %}
+                                {% if exp.notes and exp.notes != 'None' and exp.notes != '' %}
+                                    <span class="text-gray-500 dark:text-gray-400 text-xs italic">
+                                        {{ exp.notes }}
+                                    </span>
+                                {% endif %}
+                            </div>
+                            {% if exp.receipt %}
+                            <div class="mt-2">
+                                <button type="button" onclick="openReceiptModal('{{ exp.receipt.url }}', '{{ exp.category|escapejs }} - {{ exp.date }}')" class="inline-flex items-center gap-1.5 text-xs font-bold text-cyan-600 dark:text-cyan-400 hover:underline cursor-pointer">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
+                                    View Receipt
+                                </button>
+                            </div>
+                            {% endif %}
+                        </td>
+                        <td class="p-4 font-bold text-lg text-emerald-600 dark:text-emerald-400">
+                            {{ currency_symbol }}{{ exp.display_amount|floatformat:2 }} <span class="text-xs text-gray-400 dark:text-slate-500 font-medium">{{ display_currency }}</span>
+                        </td>
+                        <td class="p-4">
+                            {% if exp.payment_method == 'WeChat Pay' %}
+                                <span class="inline-flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shadow-sm">
+                                    <span class="w-6 h-6 rounded-lg bg-[#07c160] text-white flex items-center justify-center shadow-sm">
+                                        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M8.5,13.5C7.67,13.5 7,12.83 7,12C7,11.17 7.67,10.5 8.5,10.5C9.33,10.5 10,11.17 10,12C10,12.83 9.33,13.5 8.5,13.5M15.5,13.5C14.67,13.5 14,12.83 14,12C14,11.17 14.67,10.5 15.5,10.5C16.33,10.5 17,11.17 17,12C17,12.83 16.33,13.5 15.5,13.5M12,2C6.48,2 2,5.92 2,10.75C2,13.39 3.32,15.75 5.5,17.35V21L9.16,18.97C10.06,19.22 11.01,19.35 12,19.35C17.52,19.35 22,15.43 22,10.75C22,5.92 17.52,2 12,2Z"/></svg>
+                                    </span>
+                                    WeChat Pay
+                                </span>
+                            {% elif exp.payment_method == 'Alipay' %}
+                                <span class="inline-flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 shadow-sm">
+                                    <span class="w-6 h-6 rounded-lg bg-[#1677ff] text-white flex items-center justify-center shadow-sm">
+                                        <svg class="w-4 h-4 fill-current" viewBox="0 0 1024 1024">
+                                            <path d="M850.84 466.86h-243.6v-95.28h155.88v-94.8H607.24V172.9h-95.28v103.88H356.1v94.8h155.86v95.28H239.36v94.8h168.02c-23.4 117.84-111.78 193.18-226.78 241.6l57.4 84.7c142.14-60.54 250.72-152.68 297.8-292.8l110.42 124.08c-37.98 34.82-84.34 63.5-133.94 82.5l54.38 85.34c59.82-23.54 114.88-57.48 159.26-99.34 47.62 36.82 106 68.48 162.88 87.04l49.62-91.06c-48.82-16.58-98-43.58-138.86-74.5l103.88-132.02-84.32-63.54z m-346.06 95.5H399c11.22-42.66 26.8-85.36 46.12-125.96h102.66c-14.88 43.68-31.42 86.16-43.86 125.96z"/>
+                                        </svg>
+                                    </span>
+                                    Alipay
+                                </span>
+                            {% elif exp.payment_method == 'Bank Card' %}
+                                <span class="inline-flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 shadow-sm">
+                                    <span class="w-6 h-6 rounded-lg bg-indigo-500 text-white flex items-center justify-center shadow-sm">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                                    </span>
+                                    Bank Card
+                                </span>
+                            {% elif exp.payment_method == 'Cash' %}
+                                <span class="inline-flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shadow-sm">
+                                    <span class="w-6 h-6 rounded-lg bg-amber-500 text-white flex items-center justify-center shadow-sm">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                                    </span>
+                                    Cash
+                                </span>
+                            {% else %}
+                                <span class="inline-flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-slate-700">
+                                    <span class="w-6 h-6 rounded-lg bg-gray-400 text-white flex items-center justify-center shadow-sm">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/></svg>
+                                    </span>
+                                    {{ exp.payment_method }}
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td class="p-4 text-center">
+                            <button onclick="deleteTransaction(this, '{% url 'delete_expense' exp.id %}')" class="text-red-500 hover:text-white hover:bg-red-500 px-3 py-1.5 rounded-lg font-semibold text-sm transition-all duration-300">
+                                Delete
+                            </button>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="p-8 text-center text-gray-400 dark:text-gray-500 font-medium italic">No transactions recorded for this period.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- RECYCLE BIN -->
+    <div class="mt-8 mb-12 flex justify-center animate-pop-up" style="animation-delay: 800ms;">
+        <a href="{% url 'recycle_bin' %}" class="flex items-center text-gray-500 hover:text-gray-800 dark:hover:text-white transition-all duration-300 transform hover:scale-110">
+            <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+            </svg>
+            <span class="font-medium">Recycle Bin</span>
+        </a>
+    </div>
+
+</div>
+
+<!-- Receipt Preview Modal -->
+<div id="receiptModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md hidden items-center justify-center z-[70] p-4 transition-opacity duration-300 opacity-0">
+    <div id="receiptModalBox" class="bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl rounded-3xl shadow-2xl max-w-2xl w-full p-6 relative border border-gray-200 dark:border-slate-800 flex flex-col items-center">
+
+        <!-- Top Right Action Buttons (Download & Close) -->
+        <div class="absolute top-4 right-4 flex items-center gap-4 z-10">
+            <a id="receiptDownloadBtn" href="#" download class="text-gray-400 hover:text-cyan-500 transition-colors transform hover:scale-110" title="Download Receipt">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                </svg>
+            </a>
+            <button type="button" onclick="closeReceiptModal()" class="text-gray-400 hover:text-gray-800 dark:hover:text-white text-2xl font-bold transition-transform hover:rotate-90">
+                &times;
+            </button>
+        </div>
+
+        <h4 id="receiptTitle" class="text-lg font-extrabold text-gray-900 dark:text-white mb-4 pr-16 text-center">Receipt Preview</h4>
+
+        <div class="w-full max-h-[70vh] overflow-auto flex items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-950 p-6 min-h-[300px]">
+            <!-- Image Preview -->
+            <img id="receiptImage" src="" alt="Receipt" class="max-w-full max-h-[60vh] object-contain rounded-lg hidden">
+
+            <!-- Clean Document Fallback UI -->
+            <div id="receiptPdfFallback" class="hidden flex-col items-center justify-center text-center">
+                <div class="w-20 h-20 bg-blue-100 dark:bg-blue-500/10 rounded-2xl flex items-center justify-center mb-4 shadow-inner">
+                    <svg class="w-10 h-10 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                    </svg>
+                </div>
+                <h5 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Attached Document</h5>
+                <p class="text-gray-500 dark:text-gray-400 mb-6 text-sm max-w-sm">This file type cannot be previewed directly in the browser. Please open or download it to view.</p>
+                <a id="receiptPdfOpenBtn" href="#" target="_blank" class="bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold py-2.5 px-6 rounded-xl shadow-lg transition-transform hover:-translate-y-1 hover:shadow-cyan-500/40">
+                    Open / Download File
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Export Options Modal -->
+<div id="exportModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-[70] p-3 transition-opacity duration-300 opacity-0">
+    <div id="exportModalBox" class="bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl rounded-3xl shadow-2xl w-full max-w-sm p-6 sm:p-8 relative border border-gray-200 dark:border-slate-800">
+
+        <button type="button" onclick="closeExportModal()" class="absolute top-4 right-5 text-gray-400 hover:text-gray-800 dark:hover:text-white text-2xl font-bold transition-transform hover:rotate-90">
+            &times;
+        </button>
+
+        <h3 class="text-xl font-extrabold text-gray-900 dark:text-white mb-6">Export Options</h3>
+
+        <form id="exportForm">
+            <input type="hidden" id="exportCurrency" value="{{ display_currency }}">
+
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <!-- Pro From Date -->
+                <div>
+                    <label class="block text-[10px] sm:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">From Date</label>
+                    <div class="relative">
+                        <input type="text" id="exportStartDate" placeholder="Select Date" class="w-full bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 text-gray-900 dark:text-white rounded-xl pl-4 pr-10 py-3 text-sm font-semibold cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/50">
+                        <div class="absolute inset-y-0 right-3 flex items-center pointer-events-none">
+                            <!-- Updated text-cyan-500 class below -->
+                            <svg class="w-4 h-4 text-cyan-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        </div>
+                    </div>
+                </div>
+                <!-- Pro To Date -->
+                <div>
+                    <label class="block text-[10px] sm:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">To Date</label>
+                    <div class="relative">
+                        <input type="text" id="exportEndDate" placeholder="Select Date" class="w-full bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 text-gray-900 dark:text-white rounded-xl pl-4 pr-10 py-3 text-sm font-semibold cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/50">
+                        <div class="absolute inset-y-0 right-3 flex items-center pointer-events-none">
+                            <!-- Updated text-cyan-500 class below -->
+                            <svg class="w-4 h-4 text-cyan-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <p class="text-xs text-gray-400 dark:text-gray-500 mb-6 italic">*Leave dates empty to export your entire history.</p>
+
+            <div class="flex gap-3">
+                <button type="button" onclick="submitExport('pdf')" class="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-xl font-bold text-sm transition-colors shadow-lg shadow-red-500/20">
+                    Get PDF
+                </button>
+                <button type="button" onclick="submitExport('excel')" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-3 rounded-xl font-bold text-sm transition-colors shadow-lg shadow-emerald-500/20">
+                    Get Excel
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Chart.js Script -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    Chart.defaults.color = '#9ca3af';
+    Chart.defaults.borderColor = 'rgba(156, 163, 175, 0.1)';
+
+    const ctx = document.getElementById('expenseChart').getContext('2d');
+    const expenseChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: {{ chart_labels|safe }},
+            datasets: [{
+                label: 'Amount Spent',
+                data: {{ chart_data|safe }},
+                backgroundColor: [
+                    'rgba(6, 182, 212, 0.85)', 'rgba(99, 102, 241, 0.85)', 'rgba(16, 185, 129, 0.85)', 'rgba(245, 158, 11, 0.85)', 'rgba(236, 72, 153, 0.85)', 'rgba(139, 92, 246, 0.85)'
+                ],
+                hoverBackgroundColor: [
+                    'rgba(6, 182, 212, 1)', 'rgba(99, 102, 241, 1)', 'rgba(16, 185, 129, 1)', 'rgba(245, 158, 11, 1)', 'rgba(236, 72, 153, 1)', 'rgba(139, 92, 246, 1)'
+                ],
+                borderRadius: 8,
+                borderSkipped: false,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { callback: function(value) { return '{{ currency_symbol }}' + value; } }
+                },
+                x: { grid: { display: false } }
+            },
+            animations: {
+                y: {
+                    duration: 6000, easing: 'easeInOutQuad',
+                    from: function(context) { if (context.type === 'data') { return context.chart.scales.y.getPixelForValue(0); } }
+                }
+            }
+        }
+    });
+</script>
+
+<!-- Floating Action Button -->
+<button onclick="openModal()" class="fixed bottom-8 right-8 bg-gradient-to-r from-cyan-500 to-blue-600 text-white w-16 h-16 rounded-full shadow-[0_8px_30px_rgb(6,182,212,0.4)] flex items-center justify-center transition-all duration-300 transform hover:-translate-y-2 hover:scale-110 hover:shadow-[0_15px_40px_rgb(6,182,212,0.6)] z-40 animate-pop-up" style="animation-delay: 900ms;">
+    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path>
+    </svg>
+</button>
+
+<!-- Glass-Morphism Modal Overlay (Compact Mobile Version) -->
+<div id="expenseModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-[60] p-3 sm:p-6 transition-opacity duration-300 opacity-0">
+
+    <div id="modalBox" class="bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl rounded-2xl sm:rounded-[2rem] shadow-2xl w-full max-w-lg p-4 sm:p-8 relative border border-gray-200 dark:border-slate-800 flex flex-col">
+
+        <!-- Close Button -->
+        <button type="button" onclick="closeModal()" class="absolute top-3 right-4 sm:top-6 sm:right-6 text-gray-400 hover:text-gray-800 dark:hover:text-white text-2xl sm:text-3xl font-bold transition-transform hover:rotate-90 z-20">
+            &times;
+        </button>
+
+        <h3 class="text-xl sm:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-600 to-blue-600 dark:from-cyan-400 dark:to-blue-400 mb-3 sm:mb-6 tracking-tight">Quick Log</h3>
+
+        <!-- Modal Form with Custom Selects -->
+        <form method="GET" action="/quick-entry/" enctype="multipart/form-data" class="space-y-2.5 sm:space-y-4">
+            {% csrf_token %}
+
+            <!-- Row 1: Amount & Currency side-by-side -->
+            <div class="flex flex-row gap-3 sm:gap-5">
+                <div class="flex-1">
+                    <label class="block text-[10px] sm:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-0.5 sm:mb-1">Amount</label>
+                    <div class="relative">
+                        <input type="number" id="modalAmountInput" step="0.01" name="amount" required class="custom-number-input w-full bg-white/60 dark:bg-white/5 backdrop-blur-md border border-gray-200/80 dark:border-white/10 text-gray-900 dark:text-white rounded-lg sm:rounded-xl pl-2.5 pr-8 py-1.5 sm:pl-4 sm:pr-12 sm:py-3 text-sm sm:text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-cyan-500/50">
+                        <div class="absolute inset-y-0 right-1 sm:right-2 flex flex-col justify-center">
+                            <button type="button" onclick="document.getElementById('modalAmountInput').stepUp()" class="text-gray-400 hover:text-cyan-500 transition-colors focus:outline-none p-1">
+                                <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 15l7-7 7 7"></path></svg>
+                            </button>
+                            <button type="button" onclick="document.getElementById('modalAmountInput').stepDown()" class="text-gray-400 hover:text-cyan-500 transition-colors focus:outline-none p-1 -mt-1 sm:-mt-1">
+                                <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex-1">
+                    <label class="block text-[10px] sm:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-0.5 sm:mb-1">Currency</label>
+                    <select name="currency" class="custom-select relative text-xs">
+                        <option value="CNY">CNY</option>
+                        <option value="SGD">SGD</option>
+                        <option value="MAD">MAD</option>
+                        <option value="EUR">EUR</option>
+                        <option value="USD">USD</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Row 2: Date & Category side-by-side -->
+            <div class="flex flex-row gap-3 sm:gap-5">
+                <div class="flex-1">
+                    <label class="block text-[10px] sm:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-0.5 sm:mb-1">Date</label>
+                    <div class="relative">
+                        <input type="text" id="modalDatePicker" name="date" required placeholder="Select Date" class="w-full bg-white/60 dark:bg-white/5 backdrop-blur-md border border-gray-200/80 dark:border-white/10 text-gray-900 dark:text-white rounded-lg sm:rounded-xl px-2.5 py-1.5 sm:px-4 sm:py-3 text-sm sm:text-lg font-semibold cursor-pointer focus:outline-none focus:ring-2 focus:ring-cyan-500/50">
+                        <div class="absolute inset-y-0 right-2 sm:right-4 flex items-center pointer-events-none">
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex-1">
+                    <label class="block text-[10px] sm:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-0.5 sm:mb-1">Category</label>
+                    <select name="category" class="custom-select relative text-xs">
+                        <option value="Food & Dining">Food & Dining</option>
+                        <option value="Housing & Utilities">Housing & Utilities</option>
+                        <option value="Academics">Academics</option>
+                        <option value="Transportation">Transportation</option>
+                        <option value="Lifestyle & Entertainment">Lifestyle & Ent.</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Row 3: Project & Payment Method side-by-side -->
+            <div class="flex flex-row gap-3 sm:gap-5">
+                <div class="flex-1">
+                    <label class="block text-[10px] sm:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-0.5 sm:mb-1">Project</label>
+                    <input type="text" name="project" placeholder="Optional" class="w-full bg-white/60 dark:bg-white/5 backdrop-blur-md border border-gray-200/80 dark:border-white/10 text-gray-900 dark:text-white rounded-lg sm:rounded-xl px-2.5 py-1.5 sm:px-4 sm:py-3 text-sm sm:text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-cyan-500/50">
+                </div>
+                <div class="flex-1">
+                    <label class="block text-[10px] sm:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-0.5 sm:mb-1">Payment Method</label>
+                    <select name="payment_method" class="custom-select relative text-xs">
+                        <option value="WeChat Pay">WeChat Pay</option>
+                        <option value="Alipay">Alipay</option>
+                        <option value="Cash">Cash</option>
+                        <option value="Bank Card">Bank Card</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Row 4: Notes -->
+            <div>
+                <label class="block text-[10px] sm:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-0.5 sm:mb-1">Notes</label>
+                <input type="text" name="notes" placeholder="Any extra details?" class="w-full bg-white/60 dark:bg-white/5 backdrop-blur-md border border-gray-200/80 dark:border-white/10 text-gray-900 dark:text-white rounded-lg sm:rounded-xl px-2.5 py-1.5 sm:px-4 sm:py-3 text-sm sm:text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-cyan-500/50">
+            </div>
+
+            <!-- Row 5: Attach Receipt -->
+            <div>
+                <label class="block text-[10px] sm:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-0.5 sm:mb-1">Attach Receipt (Optional)</label>
+                <input type="file" name="receipt" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt" class="w-full text-[10px] sm:text-sm text-gray-500 dark:text-gray-400 font-medium bg-white/60 dark:bg-white/5 backdrop-blur-md border border-gray-200/80 dark:border-white/10 rounded-lg sm:rounded-xl px-2 py-1 sm:px-4 sm:py-2 focus:outline-none">
+            </div>
+
+            <div class="flex flex-row justify-end gap-3 sm:gap-4 pt-2 sm:pt-4 border-t border-gray-100 dark:border-slate-800">
+                <button type="button" onclick="closeModal()" class="w-1/2 sm:w-auto px-4 py-2 sm:px-6 sm:py-3 rounded-lg sm:rounded-xl font-bold text-sm sm:text-base text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-all duration-300">
+                    Cancel
+                </button>
+                <button type="submit" class="w-1/2 sm:w-auto bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-4 py-2 sm:px-8 sm:py-3 rounded-lg sm:rounded-xl font-bold text-sm sm:text-base shadow-lg transition-transform hover:-translate-y-1 hover:shadow-cyan-500/40">
+                    Save Expense
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Control Script & Flatpickr Initialization -->
+<script>
+    const modalOverlay = document.getElementById('expenseModal');
+    const modalBox = document.getElementById('modalBox');
+    let modalDatePickerInstance;
+
+    function openReceiptModal(url, title) {
+        const modal = document.getElementById('receiptModal');
+        const box = document.getElementById('receiptModalBox');
+        const img = document.getElementById('receiptImage');
+        const pdfFallback = document.getElementById('receiptPdfFallback');
+        const pdfOpenBtn = document.getElementById('receiptPdfOpenBtn');
+        const titleEl = document.getElementById('receiptTitle');
+        const downloadBtn = document.getElementById('receiptDownloadBtn');
+
+        titleEl.innerText = title ? `Receipt: ${title}` : 'Receipt Preview';
+        downloadBtn.href = url;
+
+        // 1. Convert URL to lowercase to check the extension safely
+        const urlLower = url.toLowerCase();
+
+        // 2. Check if the file is a standard image
+        const isImage = urlLower.endsWith('.png') ||
+                        urlLower.endsWith('.jpg') ||
+                        urlLower.endsWith('.jpeg') ||
+                        urlLower.endsWith('.gif') ||
+                        urlLower.endsWith('.webp');
+
+        if (isImage) {
+            // It's an image: Show the image tag
+            pdfFallback.classList.add('hidden');
+            pdfFallback.classList.remove('flex');
+            img.classList.remove('hidden');
+            img.src = url;
+        } else {
+            // It's a PDF, Word Doc, Excel, etc: Show the Document Fallback
+            img.classList.add('hidden');
+            pdfFallback.classList.remove('hidden');
+            pdfFallback.classList.add('flex');
+            pdfOpenBtn.href = url;
+        }
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        setTimeout(() => modal.classList.replace('opacity-0', 'opacity-100'), 10);
+        box.classList.add('modal-enter');
+    }
+
+    function closeReceiptModal() {
+        const modal = document.getElementById('receiptModal');
+        const box = document.getElementById('receiptModalBox');
+        modal.classList.replace('opacity-100', 'opacity-0');
+        box.classList.remove('modal-enter');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.getElementById('receiptImage').src = '';
+        }, 300);
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        // 1. Initialize Quick Log Modal Picker
+        modalDatePickerInstance = flatpickr("#modalDatePicker", {
+            defaultDate: "today",
+            dateFormat: "Y-m-d",
+            disableMobile: true,
+            animate: true,
+            monthSelectorType: "static"
+        });
+
+        // 2. Initialize Export Modal Pickers (No default date so they start empty)
+        const exportConfig = {
+            dateFormat: "Y-m-d",
+            disableMobile: true,
+            animate: true,
+            monthSelectorType: "static",
+            allowInput: true // Lets users type or click clear
+        };
+
+        flatpickr("#exportStartDate", exportConfig);
+        flatpickr("#exportEndDate", exportConfig);
+    });
+
+    function openModal() {
+        const modal = document.getElementById('expenseModal');
+        const box = document.getElementById('modalBox');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        setTimeout(() => modal.classList.replace('opacity-0', 'opacity-100'), 10);
+        box.classList.add('modal-enter');
+
+        // FREEZE BACKGROUND COMPLETELY
+        document.body.style.overflow = 'hidden';
+        modal.addEventListener('touchmove', preventScroll, { passive: false });
+    }
+
+    function closeModal() {
+        const modal = document.getElementById('expenseModal');
+        const box = document.getElementById('modalBox');
+        modal.classList.replace('opacity-100', 'opacity-0');
+        box.classList.remove('modal-enter');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+
+            // UNLOCK BACKGROUND
+            document.body.style.overflow = '';
+            modal.removeEventListener('touchmove', preventScroll);
+        }, 300);
+    }
+
+    // Helper to stop touch dragging on the background backdrop
+    function preventScroll(e) {
+        if (e.target.id === 'expenseModal') {
+            e.preventDefault();
+        }
+    }
+
+</script>
+
+<!-- Counter Script -->
+<script>
+    function animateCounters() {
+        const counters = document.querySelectorAll('.animated-counter');
+        const duration = 2200;
+        const startValue = 9999.99;
+
+        counters.forEach(counter => {
+            const targetValue = parseFloat(counter.getAttribute('data-target')) || 0;
+            const startTime = performance.now();
+
+            counter.classList.add('tabular-nums', 'inline-block', 'transition-colors', 'duration-300');
+
+            function updateCounter(currentTime) {
+                const elapsedTime = currentTime - startTime;
+                const progress = Math.min(elapsedTime / duration, 1);
+                const easeOut = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+                const currentValue = startValue - ((startValue - targetValue) * easeOut);
+
+                const blurAmount = (1 - easeOut) * 3;
+                const opacityAmount = 0.4 + (easeOut * 0.6);
+
+                counter.style.filter = `blur(${blurAmount}px)`;
+                counter.style.opacity = opacityAmount;
+                counter.textContent = currentValue.toFixed(2);
+
+                if (progress < 1) {
+                    requestAnimationFrame(updateCounter);
+                } else {
+                    counter.textContent = targetValue.toFixed(2);
+                    counter.style.filter = 'blur(0px)';
+                    counter.style.opacity = '1';
+
+                    counter.classList.add('scale-110', 'text-cyan-600', 'dark:text-cyan-400');
+                    setTimeout(() => {
+                        counter.classList.remove('scale-110', 'text-cyan-600', 'dark:text-cyan-400');
+                    }, 350);
+                }
+            }
+            requestAnimationFrame(updateCounter);
+        });
+    }
+    document.addEventListener("DOMContentLoaded", animateCounters);
+</script>
+
+<!-- Live Search -->
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const searchInput = document.getElementById('searchInput');
+        let searchTimeout = null;
+
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                clearTimeout(searchTimeout);
+
+                const tableBody = document.querySelector('tbody');
+                if (tableBody) {
+                    tableBody.style.transition = 'opacity 0.3s ease';
+                    tableBody.style.opacity = '0.4';
+                }
+
+                searchTimeout = setTimeout(() => {
+                    const query = searchInput.value;
+                    const monthInput = document.querySelector('input[name="month"]');
+                    const month = monthInput ? monthInput.value : '';
+                    const currencyInput = document.querySelector('input[name="display_currency"]');
+                    const currency = currencyInput ? currencyInput.value : 'CNY';
+
+                    let url = `{% url 'dashboard' %}?search=${encodeURIComponent(query)}&display_currency=${currency}`;
+                    if (month) {
+                        url += `&month=${month}`;
+                    }
+
+                    fetch(url)
+                        .then(response => response.text())
+                        .then(html => {
+                            const parser = new DOMParser();
+                            const doc = parser.parseFromString(html, 'text/html');
+
+                            if (tableBody) {
+                                tableBody.innerHTML = doc.querySelector('tbody').innerHTML;
+                                tableBody.style.opacity = '1';
+                            }
+
+                            const currentCards = document.querySelector('.grid-cols-1');
+                            const newCards = doc.querySelector('.grid-cols-1');
+                            if (currentCards && newCards) {
+                                currentCards.innerHTML = newCards.innerHTML;
+                                animateCounters();
+                            }
+
+                            const currentFilters = document.getElementById('top-filters-container');
+                            const newFilters = doc.getElementById('top-filters-container');
+                            if (currentFilters && newFilters) {
+                                currentFilters.innerHTML = newFilters.innerHTML;
+                                // Re-apply the magic glass CSS to the freshly loaded selects
+                                initMagicSelects(currentFilters);
+                            }
+                        });
+                }, 400);
+            });
+        }
+    });
+</script>
+
+<!-- Delete & Normal Form Submission -->
+<script>
+    function deleteTransaction(btn, url) {
+        const row = btn.closest('tr');
+        row.style.opacity = '1';
+        row.style.transform = 'translateX(0)';
+        row.style.animation = 'none';
+        void row.offsetWidth;
+        row.style.transition = 'all 0.5s cubic-bezier(0.16, 1, 0.3, 1)';
+        row.style.backgroundColor = 'rgba(239, 68, 68, 0.15)';
+        setTimeout(() => { row.style.opacity = '0'; row.style.transform = 'translateX(-100px)'; }, 50);
+        setTimeout(() => { row.remove(); }, 500);
+        fetch(url);
+    }
+</script>
+
+<!-- MAGIC: Advanced Glassmorphic Select Replacement Script -->
+<script>
+    function initMagicSelects(container = document) {
+        const selects = container.querySelectorAll('select.custom-select');
+
+        selects.forEach(select => {
+            if (select.dataset.magicActive) return; // Prevent double rendering
+            select.dataset.magicActive = 'true';
+
+            select.style.display = 'none';
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'relative inline-block w-full z-50';
+
+            if (select.closest('form') && select.closest('form').getAttribute('method') === 'GET') {
+                wrapper.classList.add('sm:w-auto', 'min-w-[140px]');
+            }
+
+            select.parentNode.insertBefore(wrapper, select);
+            wrapper.appendChild(select);
+
+            const activeOption = select.options[select.selectedIndex]?.text || 'Select...';
+
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'flex items-center justify-between w-full bg-white/60 dark:bg-white/5 backdrop-blur-xl border border-gray-200/80 dark:border-white/10 text-gray-800 dark:text-gray-200 px-4 py-2.5 rounded-xl shadow-sm hover:shadow-md focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/50 transition-all font-semibold';
+            button.innerHTML = `<span class="truncate pr-2 pointer-events-none">${activeOption}</span> <svg class="w-4 h-4 text-cyan-500 transition-transform duration-300 flex-shrink-0 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>`;
+
+            const menu = document.createElement('ul');
+            menu.className = 'absolute z-[100] w-full mt-2 bg-white/95 dark:bg-slate-800/95 backdrop-blur-3xl border border-gray-200/50 dark:border-white/10 rounded-xl shadow-2xl opacity-0 invisible translate-y-[-10px] transition-all duration-300 flex flex-col p-1.5 max-h-64 overflow-y-auto transform-gpu';
+
+            Array.from(select.options).forEach(option => {
+                const li = document.createElement('li');
+                li.className = 'px-3 py-2.5 rounded-lg cursor-pointer text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-cyan-500/10 hover:text-cyan-600 dark:hover:bg-cyan-500/20 dark:hover:text-cyan-300 transition-all flex items-center justify-between';
+                li.innerText = option.text;
+
+                if (option.selected) {
+                    li.classList.add('bg-cyan-500/10', 'text-cyan-600', 'dark:text-cyan-400');
+                }
+
+                li.onclick = (e) => {
+                    e.stopPropagation();
+                    select.value = option.value;
+                    button.querySelector('span').innerText = option.text;
+
+                    Array.from(menu.children).forEach(child => child.classList.remove('bg-cyan-500/10', 'text-cyan-600', 'dark:text-cyan-400'));
+                    li.classList.add('bg-cyan-500/10', 'text-cyan-600', 'dark:text-cyan-400');
+
+                    menu.classList.add('opacity-0', 'invisible', 'translate-y-[-10px]');
+                    button.querySelector('svg').classList.remove('rotate-180');
+                    menu.classList.remove('is-open');
+                    wrapper.style.zIndex = '50';
+
+                    if (select.getAttribute('onchange') && select.form) {
+                        select.form.submit();
+                    } else {
+                        select.dispatchEvent(new Event('change'));
+                    }
+                };
+                menu.appendChild(li);
+            });
+
+            wrapper.appendChild(button);
+            wrapper.appendChild(menu);
+
+            button.onclick = (e) => {
+                e.stopPropagation();
+                const isClosed = menu.classList.contains('opacity-0');
+
+                document.querySelectorAll('.is-open').forEach(m => {
+                    m.classList.add('opacity-0', 'invisible', 'translate-y-[-10px]');
+                    m.previousElementSibling.querySelector('svg').classList.remove('rotate-180');
+                    m.classList.remove('is-open');
+                    m.parentElement.style.zIndex = '50';
+                });
+
+                if (isClosed) {
+                    menu.classList.remove('opacity-0', 'invisible', 'translate-y-[-10px]');
+                    button.querySelector('svg').classList.add('rotate-180');
+                    menu.classList.add('is-open');
+                    wrapper.style.zIndex = '60';
+                }
+            };
+        });
+    }
+
+    // Run on initial page load
+    document.addEventListener("DOMContentLoaded", () => {
+        initMagicSelects();
+
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', () => {
+            document.querySelectorAll('.is-open').forEach(menu => {
+                menu.classList.add('opacity-0', 'invisible', 'translate-y-[-10px]');
+                menu.previousElementSibling.querySelector('svg').classList.remove('rotate-180');
+                menu.classList.remove('is-open');
+                menu.parentElement.style.zIndex = '50';
+            });
+        });
+    });
+</script>
+
+<script>
+    function openExportModal() {
+        const modal = document.getElementById('exportModal');
+        const box = document.getElementById('exportModalBox');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        setTimeout(() => modal.classList.replace('opacity-0', 'opacity-100'), 10);
+        box.classList.add('modal-enter');
+    }
+
+    function closeExportModal() {
+        const modal = document.getElementById('exportModal');
+        const box = document.getElementById('exportModalBox');
+        modal.classList.replace('opacity-100', 'opacity-0');
+        box.classList.remove('modal-enter');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }, 300);
+    }
+
+    function submitExport(type) {
+        const displayCurrency = document.getElementById('exportCurrency').value;
+        const startDate = document.getElementById('exportStartDate').value;
+        const endDate = document.getElementById('exportEndDate').value;
+
+        // Set base URL based on button clicked
+        let baseUrl = type === 'pdf' ? "{% url 'export_pdf_report' %}" : "{% url 'export_report' %}";
+        let finalUrl = `${baseUrl}?display_currency=${displayCurrency}`;
+
+        // Add date ranges if the user filled them out
+        if (startDate) finalUrl += `&start_date=${startDate}`;
+        if (endDate) finalUrl += `&end_date=${endDate}`;
+
+        // Trigger the download
+        window.location.href = finalUrl;
+        closeExportModal();
+    }
+</script>
+
+<!-- SMOOTH AJAX SUBMISSION (NO RELOAD) -->
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const quickLogForm = document.querySelector('#expenseModal form');
+
+        if (quickLogForm) {
+            quickLogForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+
+                const submitBtn = quickLogForm.querySelector('button[type="submit"]');
+                const originalBtnText = submitBtn.innerHTML;
+                submitBtn.innerHTML = 'Saving...';
+                submitBtn.disabled = true;
+
+                const formData = new FormData(quickLogForm);
+
+                try {
+                    const response = await fetch(quickLogForm.action, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+
+                    // 1. If Django rejects it, show the EXACT reason
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        let errorMsg = "Transaction Rejected by Backend:\n\n";
+                        for (let field in errorData.messages) {
+                            errorMsg += `- ${field.toUpperCase()}: ${errorData.messages[field]}\n`;
+                        }
+                        alert(errorMsg); // This will now tell you exactly what broke!
+                        submitBtn.innerHTML = originalBtnText;
+                        submitBtn.disabled = false;
+                        return;
+                    }
+
+                    // 2. Success! Inject new data smoothly without reloading
+                    const htmlText = await response.text();
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(htmlText, 'text/html');
+
+                    const currentTable = document.querySelector('tbody');
+                    const newTable = doc.querySelector('tbody');
+                    if (currentTable && newTable) currentTable.innerHTML = newTable.innerHTML;
+
+                    const currentCards = document.querySelector('.grid-cols-1');
+                    const newCards = doc.querySelector('.grid-cols-1');
+                    if (currentCards && newCards) {
+                        currentCards.innerHTML = newCards.innerHTML;
+                        if (typeof animateCounters === 'function') animateCounters();
+                    }
+
+                    const currentFilters = document.getElementById('top-filters-container');
+                    const newFilters = doc.getElementById('top-filters-container');
+                    if (currentFilters && newFilters) {
+                        currentFilters.innerHTML = newFilters.innerHTML;
+                        if (typeof initMagicSelects === 'function') initMagicSelects(currentFilters);
+                    }
+
+                    // --- SEAMLESS CHART UPDATE ---
+                    const scripts = Array.from(doc.querySelectorAll('script'));
+                    const chartScript = scripts.find(s => s.textContent.includes('expenseChart') && s.textContent.includes('labels:'));
+
+                    if (chartScript && typeof expenseChart !== 'undefined') {
+                        // Extract the new data arrays from the hidden backend response
+                        const labelsMatch = chartScript.textContent.match(/labels:\s*(\[.*?\])/);
+                        const dataMatch = chartScript.textContent.match(/data:\s*(\[.*?\])/);
+
+                        if (labelsMatch && dataMatch) {
+                            // Inject the new arrays into the live chart and animate
+                            expenseChart.data.labels = new Function('return ' + labelsMatch[1])();
+                            expenseChart.data.datasets[0].data = new Function('return ' + dataMatch[1])();
+                            expenseChart.update(); // Triggers the smooth Chart.js animation
+                        }
+                    }
+                    // -----------------------------
+
+                    window.history.pushState({}, '', response.url);
+
+                    closeModal();
+                    setTimeout(() => {
+                        quickLogForm.reset();
+                        if (typeof modalDatePickerInstance !== 'undefined') {
+                            modalDatePickerInstance.setDate("today");
+                        }
+                    }, 400);
+
+                } catch (error) {
+                    console.error("AJAX Error:", error);
+                    alert("Network error occurred. Are you offline?");
+                } finally {
+                    submitBtn.innerHTML = originalBtnText;
+                    submitBtn.disabled = false;
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

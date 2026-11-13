@@ -1,0 +1,280 @@
+{% extends 'expenses/base.html' %}
+{% block content %}
+
+<!-- Staggered Loading CSS -->
+<style>
+    .animate-pop-up { animation: popUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; transform: translateY(30px); }
+    @keyframes popUp { to { opacity: 1; transform: translateY(0); } }
+</style>
+
+<div class="max-w-6xl mx-auto space-y-8">
+
+    <!-- Top Bar: Title & Back Buttons -->
+    <div class="relative z-50 flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 animate-pop-up" style="animation-delay: 100ms;">
+        <h2 class="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">Recycle Bin</h2>
+
+        <!-- DUAL NAVIGATION MENU -->
+        <div class="flex items-center gap-3">
+            <a href="{% url 'dashboard' %}" class="flex items-center gap-2 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-gray-200/80 dark:border-slate-700/80 text-gray-800 dark:text-gray-200 px-5 py-2.5 rounded-xl font-bold text-sm shadow-sm transition-all duration-300 hover:shadow-md hover:bg-white dark:hover:bg-slate-800 hover:-translate-y-0.5">
+                <svg class="w-5 h-5 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+                Dashboard
+            </a>
+            <a href="{% url 'trust_vault' %}" class="flex items-center gap-2 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-gray-200/80 dark:border-slate-700/80 text-gray-800 dark:text-gray-200 px-5 py-2.5 rounded-xl font-bold text-sm shadow-sm transition-all duration-300 hover:shadow-md hover:bg-white dark:hover:bg-slate-800 hover:-translate-y-0.5">
+                <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+                Trust Vault
+            </a>
+        </div>
+    </div>
+
+    <!-- TABLE 1: Deleted Standard Expenses -->
+    <div class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl p-6 sm:p-8 rounded-3xl border border-gray-200/80 dark:border-slate-800 shadow-xl animate-pop-up relative overflow-hidden" style="animation-delay: 200ms;">
+        <div class="absolute -right-10 -bottom-10 w-48 h-48 bg-rose-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <h3 class="text-xl font-extrabold text-gray-900 dark:text-white mb-4 relative z-10 flex items-center gap-2">
+            <svg class="w-5 h-5 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+            Deleted Expenses
+        </h3>
+
+        <div class="block w-full max-w-full overflow-x-auto rounded-2xl border border-gray-200 dark:border-slate-800 shadow-sm relative z-10">
+            <table class="w-full text-left border-collapse min-w-[700px]">
+                <thead>
+                    <tr class="bg-gray-50/80 dark:bg-slate-800/80 border-b border-gray-200 dark:border-slate-800 text-gray-600 dark:text-gray-400 text-sm tracking-wide uppercase">
+                        <th class="p-4 font-semibold">Date</th>
+                        <th class="p-4 font-semibold">Category</th>
+                        <th class="p-4 font-semibold text-center">Receipt</th>
+                        <th class="p-4 font-semibold">Amount</th>
+                        <th class="p-4 font-semibold text-right">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for exp in expenses %}
+                    <tr class="border-b border-gray-100 dark:border-slate-800/60 hover:bg-gray-50/50 dark:hover:bg-slate-800/50 transition-colors text-gray-700 dark:text-gray-300">
+                        <td class="p-4 whitespace-nowrap">{{ exp.date }}</td>
+                        <td class="p-4 font-bold text-gray-900 dark:text-white">{{ exp.category }}</td>
+                        <td class="p-4 text-center">
+                            {% if exp.receipt %}
+                                <!-- Passed category and date to JS for the dynamic modal title -->
+                                <button onclick="openReceiptModal('{{ exp.receipt.url }}', 'Receipt: {{ exp.category|escapejs }} – {{ exp.date }}')" class="inline-flex items-center gap-1.5 text-xs font-bold text-cyan-600 dark:text-cyan-400 bg-cyan-500/10 hover:bg-cyan-500 hover:text-white dark:hover:bg-cyan-500 dark:hover:text-white px-3 py-1.5 rounded-lg transition-all shadow-sm hover:shadow-md hover:shadow-cyan-500/30">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                    View
+                                </button>
+                            {% else %}
+                                <span class="text-xs text-gray-400 dark:text-slate-500 italic font-medium px-2 py-1 bg-gray-100/50 dark:bg-slate-800/50 rounded-lg">None</span>
+                            {% endif %}
+                        </td>
+                        <td class="p-4 font-bold text-lg text-emerald-600 dark:text-emerald-400">
+                            {% if exp.currency == 'CNY' %}¥{% elif exp.currency == 'EUR' %}€{% elif exp.currency == 'USD' %}${% endif %}{{ exp.amount }} <span class="text-xs text-gray-400 dark:text-slate-500 font-medium">{{ exp.currency }}</span>
+                        </td>
+                        <td class="p-4 flex justify-end gap-3">
+                            <button onclick="handleAsyncAction(this, '{% url 'restore_expense' exp.id %}', 'restore')" class="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-4 py-2 rounded-xl font-bold text-sm transition-all hover:bg-emerald-500 hover:text-white dark:hover:bg-emerald-500 dark:hover:text-white hover:shadow-lg hover:shadow-emerald-500/30">Restore</button>
+                            <button onclick="handleAsyncAction(this, '{% url 'permanent_delete' exp.id %}', 'delete')" class="bg-red-500/10 text-red-600 dark:text-red-400 px-4 py-2 rounded-xl font-bold text-sm transition-all hover:bg-red-500 hover:text-white dark:hover:bg-red-500 dark:hover:text-white hover:shadow-lg hover:shadow-red-500/30">Delete Forever</button>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="p-16 text-center text-gray-400 dark:text-gray-500 font-medium italic">
+                            Your expense recycle bin is completely empty.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- TABLE 2: Deleted Agreements (Trust Vault) -->
+    <div class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl p-6 sm:p-8 rounded-3xl border border-gray-200/80 dark:border-slate-800 shadow-xl animate-pop-up relative overflow-hidden" style="animation-delay: 300ms;">
+        <div class="absolute -left-10 -bottom-10 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <h3 class="text-xl font-extrabold text-gray-900 dark:text-white mb-4 relative z-10 flex items-center gap-2">
+            <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+            Deleted Agreements
+        </h3>
+
+        <div class="block w-full max-w-full overflow-x-auto rounded-2xl border border-gray-200 dark:border-slate-800 shadow-sm relative z-10">
+            <table class="w-full text-left border-collapse min-w-[700px]">
+                <thead>
+                    <tr class="bg-gray-50/80 dark:bg-slate-800/80 border-b border-gray-200 dark:border-slate-800 text-gray-600 dark:text-gray-400 text-sm tracking-wide uppercase">
+                        <th class="p-4 font-semibold">Date</th>
+                        <th class="p-4 font-semibold">Contact & Type</th>
+                        <th class="p-4 font-semibold text-center">Receipt</th>
+                        <th class="p-4 font-semibold">Amount</th>
+                        <th class="p-4 font-semibold text-right">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ledger in ledgers %}
+                    <tr class="border-b border-gray-100 dark:border-slate-800/60 hover:bg-gray-50/50 dark:hover:bg-slate-800/50 transition-colors text-gray-700 dark:text-gray-300">
+                        <td class="p-4 whitespace-nowrap">{{ ledger.date }}</td>
+                        <td class="p-4">
+                            <div class="font-bold text-gray-900 dark:text-white">{{ ledger.contact.name }}</div>
+                            <div class="text-xs text-gray-500 dark:text-gray-400">
+                                {% if ledger.transaction_type == 'LENT' %}You Lent Money{% else %}You Borrowed Money{% endif %}
+                            </div>
+                        </td>
+                        <td class="p-4 text-center">
+                            {% if ledger.receipt %}
+                                <!-- Passed contact name and date to JS for the dynamic modal title -->
+                                <button onclick="openReceiptModal('{{ ledger.receipt.url }}', 'Receipt: {{ ledger.contact.name|escapejs }} – {{ ledger.date }}')" class="inline-flex items-center gap-1.5 text-xs font-bold text-cyan-600 dark:text-cyan-400 bg-cyan-500/10 hover:bg-cyan-500 hover:text-white dark:hover:bg-cyan-500 dark:hover:text-white px-3 py-1.5 rounded-lg transition-all shadow-sm hover:shadow-md hover:shadow-cyan-500/30">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                    View
+                                </button>
+                            {% else %}
+                                <span class="text-xs text-gray-400 dark:text-slate-500 italic font-medium px-2 py-1 bg-gray-100/50 dark:bg-slate-800/50 rounded-lg">None</span>
+                            {% endif %}
+                        </td>
+                        <td class="p-4 font-bold text-lg {% if ledger.transaction_type == 'LENT' %}text-emerald-600 dark:text-emerald-400{% else %}text-rose-600 dark:text-rose-400{% endif %}">
+                            ¥{{ ledger.amount|floatformat:2 }}
+                        </td>
+                        <td class="p-4 flex justify-end gap-3">
+                            <button onclick="handleAsyncAction(this, '{% url 'restore_ledger' ledger.id %}', 'restore')" class="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-4 py-2 rounded-xl font-bold text-sm transition-all hover:bg-emerald-500 hover:text-white dark:hover:bg-emerald-500 dark:hover:text-white hover:shadow-lg hover:shadow-emerald-500/30">Restore</button>
+                            <button onclick="handleAsyncAction(this, '{% url 'permanent_delete_ledger' ledger.id %}', 'delete')" class="bg-red-500/10 text-red-600 dark:text-red-400 px-4 py-2 rounded-xl font-bold text-sm transition-all hover:bg-red-500 hover:text-white dark:hover:bg-red-500 dark:hover:text-white hover:shadow-lg hover:shadow-red-500/30">Delete Forever</button>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="p-16 text-center text-gray-400 dark:text-gray-500 font-medium italic">
+                            Your agreements recycle bin is completely empty.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- MATCHING UI MODAL: Receipt View -->
+<div id="receiptModal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4 sm:p-6 backdrop-blur-sm bg-gray-900/60 dark:bg-slate-900/80 transition-opacity opacity-0 duration-300">
+    <!-- Styled background color and rounded corners to match the image precisely -->
+    <div class="bg-[#f8f9fa] dark:bg-slate-800 rounded-[28px] shadow-2xl border border-gray-200/50 dark:border-slate-700 w-full max-w-2xl overflow-hidden transform scale-95 transition-transform duration-300 flex flex-col min-h-[400px]" id="receiptModalContent">
+
+        <!-- Seamless Header (No Bottom Border) -->
+        <div class="flex justify-between items-center px-8 py-6">
+            <h3 id="receiptModalTitle" class="text-lg font-bold text-gray-900 dark:text-white">
+                Receipt: Viewer
+            </h3>
+            <div class="flex items-center gap-4 text-gray-400 dark:text-gray-500">
+                <!-- Header Download Icon -->
+                <a id="receiptDownloadIcon" href="" target="_blank" class="hover:text-gray-700 dark:hover:text-gray-200 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                </a>
+                <!-- Close X Icon -->
+                <button onclick="closeReceiptModal()" class="hover:text-gray-700 dark:hover:text-gray-200 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="px-8 pb-10 flex-1 flex justify-center items-center overflow-auto">
+
+            <!-- Used for images -->
+            <img id="receiptImage" src="" alt="Receipt Image" class="hidden max-w-full max-h-[60vh] object-contain rounded-xl shadow-sm border border-gray-200 dark:border-slate-700">
+
+            <!-- NEW DOCUMENT PLACEHOLDER (Matches image_5289e3.png) -->
+            <div id="receiptDocument" class="hidden flex-col items-center justify-center text-center mt-4">
+                <!-- Light Blue Icon Container -->
+                <div class="w-20 h-20 bg-[#e8f0fe] dark:bg-blue-900/30 rounded-[20px] flex items-center justify-center mb-6">
+                    <svg class="w-8 h-8 text-[#3b82f6]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                </div>
+
+                <!-- Typography -->
+                <h4 class="text-[22px] font-bold text-gray-900 dark:text-white mb-2 tracking-tight">Attached Document</h4>
+                <p class="text-[15px] text-slate-500 dark:text-slate-400 mb-8 max-w-[320px] leading-relaxed">
+                    This file type cannot be previewed directly in the browser. Please open or download it to view.
+                </p>
+
+                <!-- Gradient Download Button -->
+                <a id="receiptDownloadBtnBody" href="" target="_blank" class="px-8 py-3.5 bg-gradient-to-r from-[#0cb4d9] to-[#2d6ae1] hover:from-[#0aa3c4] hover:to-[#255bd1] text-white rounded-[14px] font-bold text-[15px] transition-all shadow-lg shadow-blue-500/25 transform hover:-translate-y-0.5">
+                    Open / Download File
+                </a>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    function handleAsyncAction(btn, url, actionType) {
+        const row = btn.closest('tr');
+        const tbody = row.closest('tbody');
+
+        row.style.transition = 'all 0.5s cubic-bezier(0.16, 1, 0.3, 1)';
+
+        if (actionType === 'restore') {
+            row.style.backgroundColor = 'rgba(16, 185, 129, 0.15)';
+            setTimeout(() => { row.style.opacity = '0'; row.style.transform = 'translateX(100px)'; }, 50);
+        } else {
+            row.style.backgroundColor = 'rgba(239, 68, 68, 0.15)';
+            setTimeout(() => { row.style.opacity = '0'; row.style.transform = 'translateX(-100px)'; }, 50);
+        }
+
+        setTimeout(() => {
+            row.remove();
+            if (tbody.children.length === 0) {
+                tbody.innerHTML = `
+                    <tr class="animate-pop-up">
+                        <td colspan="5" class="p-16 text-center text-gray-400 dark:text-gray-500 font-medium italic">
+                            This recycle bin is completely empty.
+                        </td>
+                    </tr>
+                `;
+            }
+        }, 500);
+
+        fetch(url);
+    }
+
+    // MODAL LOGIC: Accepts dynamic title and matches the new UI
+    function openReceiptModal(url, dynamicTitle) {
+        const modal = document.getElementById('receiptModal');
+        const modalContent = document.getElementById('receiptModalContent');
+        const img = document.getElementById('receiptImage');
+        const docPlaceholder = document.getElementById('receiptDocument');
+
+        // Target text and buttons
+        const titleEl = document.getElementById('receiptModalTitle');
+        const headerIcon = document.getElementById('receiptDownloadIcon');
+        const bodyBtn = document.getElementById('receiptDownloadBtnBody');
+
+        // Update Title and Links
+        titleEl.textContent = dynamicTitle;
+        headerIcon.href = url;
+        bodyBtn.href = url;
+
+        // Check if the file is an image based on its extension
+        const isImage = /\.(jpeg|jpg|gif|png|webp|svg|bmp)(\?.*)?$/i.test(url.toLowerCase());
+
+        if (isImage) {
+            // It's an image
+            docPlaceholder.classList.add('hidden');
+            docPlaceholder.classList.remove('flex');
+            img.classList.remove('hidden');
+            img.src = url;
+        } else {
+            // It's a document placeholder
+            img.classList.add('hidden');
+            docPlaceholder.classList.remove('hidden');
+            docPlaceholder.classList.add('flex');
+        }
+
+        modal.classList.remove('hidden');
+        void modal.offsetWidth; // Trigger reflow
+
+        modal.classList.remove('opacity-0');
+        modalContent.classList.remove('scale-95');
+    }
+
+    function closeReceiptModal() {
+        const modal = document.getElementById('receiptModal');
+        const modalContent = document.getElementById('receiptModalContent');
+
+        modal.classList.add('opacity-0');
+        modalContent.classList.add('scale-95');
+
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            document.getElementById('receiptImage').src = '';
+        }, 300);
+    }
+</script>
+{% endblock %}

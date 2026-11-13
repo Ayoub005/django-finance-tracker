@@ -1,0 +1,338 @@
+{% extends 'expenses/base.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+    /* Global Smooth Entry */
+    body { animation: globalFadeIn 1s cubic-bezier(0.16, 1, 0.3, 1) forwards; overflow-x: hidden; }
+    @keyframes globalFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    /* Staggered Entry Animations */
+    .animate-pop-up {
+        animation: popUp 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        opacity: 0;
+        transform: translateY(50px) scale(0.95);
+        will-change: transform, opacity;
+    }
+    @keyframes popUp { to { opacity: 1; transform: translateY(0) scale(1); } }
+
+    /* Ambient Floating Orbs */
+    @keyframes floatSlow {
+        0%, 100% { transform: translate(0, 0) scale(1); }
+        33% { transform: translate(40px, -60px) scale(1.1); }
+        66% { transform: translate(-30px, 30px) scale(0.9); }
+    }
+    .animate-float-slow { animation: floatSlow 18s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+
+    @keyframes floatFast {
+        0%, 100% { transform: translate(0, 0) rotate(0deg); }
+        50% { transform: translate(-25px, -40px) rotate(5deg); }
+    }
+    .animate-float-fast { animation: floatFast 12s infinite ease-in-out; }
+
+    /* Floating Data Widgets */
+    @keyframes floatWidget1 { 0%, 100% { transform: translateY(0px) rotate(-5deg); } 50% { transform: translateY(-20px) rotate(-2deg); } }
+    @keyframes floatWidget2 { 0%, 100% { transform: translateY(0px) rotate(5deg); } 50% { transform: translateY(-15px) rotate(8deg); } }
+    .floating-widget-1 { animation: floatWidget1 6s ease-in-out infinite; }
+    .floating-widget-2 { animation: floatWidget2 7s ease-in-out infinite reverse; }
+
+    /* High-Tech Animated Grid */
+    @keyframes panGrid { 0% { background-position: 0px 0px; } 100% { background-position: 50px 50px; } }
+    .bg-cyber-grid {
+        background-size: 50px 50px;
+        background-image:
+            linear-gradient(to right, rgba(6, 182, 212, 0.05) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(6, 182, 212, 0.05) 1px, transparent 1px);
+        mask-image: radial-gradient(circle at center, black 30%, transparent 80%);
+        -webkit-mask-image: radial-gradient(circle at center, black 30%, transparent 80%);
+        animation: panGrid 4s linear infinite;
+    }
+    html.dark .bg-cyber-grid {
+        background-image:
+            linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+    }
+
+    /* Shimmer Buttons */
+    @keyframes shimmerSweep { 0% { transform: translateX(-150%) skewX(-20deg); } 100% { transform: translateX(300%) skewX(-20deg); } }
+    .animate-shimmer-sweep { animation: shimmerSweep 3s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+
+    /* Scroll Reveal Engine */
+    .scroll-reveal { opacity: 0; transform: translateY(80px); transition: all 1s cubic-bezier(0.16, 1, 0.3, 1); }
+    .scroll-reveal.active { opacity: 1; transform: translateY(0); }
+
+    /* 3D Mouse Tilt */
+    .tilt-element { transition: transform 0.1s ease-out; transform-style: preserve-3d; will-change: transform; }
+</style>
+
+<!-- ==========================================
+     1. HERO SECTION & MAGNETIC CTAs
+========================================== -->
+<div class="relative min-h-[95vh] flex flex-col items-center justify-center w-full rounded-3xl mt-4 border border-white/50 dark:border-slate-800/50 shadow-2xl bg-white/40 dark:bg-slate-950/40 backdrop-blur-3xl overflow-hidden">
+    <!-- Ambient Grid & Orbs -->
+    <div class="absolute inset-0 bg-cyber-grid pointer-events-none z-0"></div>
+    <div class="absolute top-[-15%] left-[-10%] w-[500px] h-[500px] bg-cyan-400/30 dark:bg-cyan-500/10 rounded-full blur-[100px] animate-float-slow pointer-events-none z-0"></div>
+    <div class="absolute bottom-[-15%] right-[-10%] w-[600px] h-[600px] bg-blue-500/20 dark:bg-indigo-500/10 rounded-full blur-[120px] animate-float-fast pointer-events-none z-0" style="animation-delay: -4s;"></div>
+
+    <!-- Floating UI Widgets -->
+    <div class="hidden lg:flex absolute top-1/4 left-[10%] floating-widget-1 z-20 items-center gap-3 bg-white/70 dark:bg-slate-800/70 backdrop-blur-xl border border-white/50 dark:border-slate-700 p-3 rounded-2xl shadow-xl">
+        <div class="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center text-green-500"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg></div>
+        <div>
+            <p class="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Inflow</p>
+            <p class="text-lg font-black text-gray-900 dark:text-white">+ 14,250 MAD</p>
+        </div>
+    </div>
+    <div class="hidden lg:flex absolute bottom-1/3 right-[10%] floating-widget-2 z-20 items-center gap-3 bg-white/70 dark:bg-slate-800/70 backdrop-blur-xl border border-white/50 dark:border-slate-700 p-3 rounded-2xl shadow-xl">
+        <div class="w-10 h-10 rounded-full bg-cyan-500/20 flex items-center justify-center text-cyan-500"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg></div>
+        <div>
+            <p class="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Live Rate</p>
+            <p class="text-lg font-black text-gray-900 dark:text-white">CNY 1.00 = MAD 1.38</p>
+        </div>
+    </div>
+
+    <div class="relative z-10 text-center px-4 sm:px-6 max-w-5xl mx-auto w-full flex flex-col items-center py-20">
+        <!-- Status Badge -->
+        <div class="animate-pop-up inline-flex items-center justify-center p-[2px] mb-8 rounded-full overflow-hidden shadow-lg shadow-cyan-500/20" style="animation-delay: 100ms;">
+            <span class="absolute inset-0 bg-gradient-to-r from-cyan-400 via-indigo-500 to-blue-600 opacity-80"></span>
+            <span class="relative flex items-center gap-2.5 px-5 py-2 rounded-full bg-white dark:bg-slate-950 w-full h-full">
+                <div class="absolute inset-0 bg-gradient-to-r from-transparent via-cyan-500/20 dark:via-white/10 to-transparent animate-shimmer-sweep pointer-events-none"></div>
+                <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+                <span class="text-[11px] sm:text-xs font-black uppercase tracking-[0.2em] text-transparent bg-clip-text bg-gradient-to-r from-cyan-600 to-blue-700 dark:from-cyan-400 dark:to-blue-400">Neural Engine Active</span>
+            </span>
+        </div>
+
+        <!-- Headline -->
+        <h1 class="animate-pop-up text-5xl sm:text-6xl md:text-8xl font-black text-gray-900 dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-br dark:from-white dark:via-gray-200 dark:to-gray-500 tracking-tight leading-[1.1] mb-6 drop-shadow-sm" style="animation-delay: 200ms;">
+            The Next Evolution of <br class="hidden md:block">
+            <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 to-blue-600 dark:from-cyan-400 dark:to-indigo-400 drop-shadow-[0_0_30px_rgba(6,182,212,0.2)]">Wealth Architecture</span>
+        </h1>
+
+        <p class="animate-pop-up text-lg md:text-xl text-gray-600 dark:text-gray-400 font-medium max-w-2xl leading-relaxed mb-12" style="animation-delay: 300ms;">
+            Command your capital across global currencies in real-time. Deploy intelligent peer-to-peer ledgers. Master your financial matrix.
+        </p>
+
+        <!-- Dynamic Auth Buttons with Magnetic Copy -->
+        <div class="animate-pop-up flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-5 w-full sm:w-auto" style="animation-delay: 400ms;">
+            {% if user.is_authenticated %}
+                <a href="{% url 'dashboard' %}" class="w-full sm:w-auto group relative inline-flex items-center justify-center gap-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-10 py-4 rounded-2xl font-extrabold text-lg shadow-[0_0_40px_rgba(6,182,212,0.3)] transition-all duration-300 hover:scale-110 hover:shadow-[0_0_60px_rgba(6,182,212,0.6)]">
+                    <span class="relative z-10 tracking-wide">Enter Dashboard</span>
+                    <svg class="w-5 h-5 relative z-10 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                </a>
+            {% else %}
+                <a href="{% url 'register' %}" class="w-full sm:w-auto group relative inline-flex items-center justify-center gap-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-10 py-4 rounded-2xl font-extrabold text-lg shadow-[0_0_40px_rgba(6,182,212,0.3)] transition-all duration-300 hover:scale-110 hover:shadow-[0_0_60px_rgba(6,182,212,0.6)]">
+                    <span class="relative z-10 tracking-wide">Take Control of Your Finances</span>
+                    <svg class="w-5 h-5 relative z-10 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                </a>
+            {% endif %}
+            <a href="{% url 'trust_vault' %}" class="w-full sm:w-auto group inline-flex items-center justify-center gap-3 bg-white/70 dark:bg-slate-900/50 backdrop-blur-xl border border-gray-200 dark:border-slate-700/50 text-gray-900 dark:text-white px-10 py-4 rounded-2xl font-extrabold text-lg transition-all duration-300 hover:bg-white dark:hover:bg-slate-800/80 hover:-translate-y-2 hover:shadow-xl hover:border-cyan-500/50">
+                <svg class="w-5 h-5 text-cyan-500 group-hover:rotate-90 transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                The Trust Vault
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- ==========================================
+     2. TRUST & SECURITY BANNER
+========================================== -->
+<div class="w-full border-y border-gray-200 dark:border-slate-800/50 bg-white/30 dark:bg-slate-900/30 backdrop-blur-md animate-pop-up" style="animation-delay: 500ms;">
+    <div class="max-w-6xl mx-auto px-4 py-8 flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-70 grayscale hover:grayscale-0 transition-all duration-500">
+        <div class="flex items-center gap-2 text-gray-800 dark:text-gray-300 font-bold text-sm">
+            <svg class="w-6 h-6 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+            Bank-Grade Security
+        </div>
+        <div class="flex items-center gap-2 text-gray-800 dark:text-gray-300 font-bold text-sm">
+            <svg class="w-6 h-6 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+            Encrypted Data Vault
+        </div>
+        <div class="flex items-center gap-2 text-gray-800 dark:text-gray-300 font-bold text-sm">
+            <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+            Live Global API Sync
+        </div>
+    </div>
+</div>
+
+<!-- ==========================================
+     3. INTERACTIVE DARK/LIGHT MODE SLIDER
+========================================== -->
+<div class="relative w-full max-w-7xl mx-auto px-4 sm:px-6 py-32 scroll-reveal">
+    <div class="text-center mb-16">
+        <h2 class="text-4xl sm:text-5xl font-black text-gray-900 dark:text-white tracking-tight mb-4">
+            Designed for <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-cyan-400">Absolute Clarity.</span>
+        </h2>
+        <p class="text-lg text-gray-600 dark:text-gray-400 font-medium">Drag the slider to experience seamless Light & Dark Mode transitions.</p>
+    </div>
+
+    <!-- The Interactive Slider Container -->
+    <div class="relative w-full max-w-5xl mx-auto h-[300px] sm:h-[500px] lg:h-[600px] bg-slate-900 rounded-[2rem] border border-gray-200 dark:border-slate-700 shadow-2xl overflow-hidden cursor-ew-resize group select-none" id="compare-container">
+        <!-- 1. BACK IMAGE: Dark Mode Mockup (Upload your dark mode screenshot here) -->
+        <img src="{% static 'images/dashboard-dark.png' %}" alt="Dark Mode" class="absolute inset-0 w-full h-full object-cover pointer-events-none">
+
+        <!-- 2. FRONT IMAGE: Light Mode Mockup (Upload your light mode screenshot here) -->
+        <div id="compare-overlay" class="absolute inset-0 w-full h-full border-r-2 border-cyan-400" style="clip-path: polygon(0 0, 50% 0, 50% 100%, 0 100%);">
+            <img src="{% static 'images/dashboard-light.png' %}" alt="Light Mode" class="absolute inset-0 w-full h-full object-cover pointer-events-none">
+        </div>
+
+        <!-- 3. The Drag Handle -->
+        <div id="compare-handle" class="absolute top-0 bottom-0 left-1/2 w-0.5 bg-cyan-400 flex items-center justify-center transform -translate-x-1/2 pointer-events-none shadow-[0_0_15px_rgba(6,182,212,0.8)]">
+            <div class="w-10 h-10 bg-cyan-500 rounded-full border-2 border-white text-white flex items-center justify-center shadow-lg transition-transform group-hover:scale-110">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 9l4-4 4 4m0 6l-4 4-4-4"></path></svg>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ==========================================
+     4. THE "BENTO BOX" FEATURE GRID
+========================================== -->
+<div class="relative w-full max-w-7xl mx-auto px-4 sm:px-6 py-16 scroll-reveal">
+    <div class="text-center mb-16">
+        <h2 class="text-4xl sm:text-5xl font-black text-gray-900 dark:text-white tracking-tight">Everything you need. <br> <span class="text-gray-400">Nothing you don't.</span></h2>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-[250px]">
+
+        <!-- Bento 1: Beautiful Charts (Large) -->
+        <div class="md:col-span-2 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-gray-200 dark:border-slate-800 rounded-3xl p-8 relative overflow-hidden group hover:border-cyan-500/50 transition-colors shadow-lg">
+            <div class="absolute -right-20 -bottom-20 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl group-hover:bg-cyan-500/20 transition-all"></div>
+            <h3 class="text-2xl font-extrabold text-gray-900 dark:text-white mb-2 relative z-10">Visual Intelligence</h3>
+            <p class="text-gray-600 dark:text-gray-400 font-medium relative z-10 max-w-sm">Automatically generated, responsive Chart.js graphics break down your spending habits instantly.</p>
+            <div class="absolute right-[-10%] bottom-[-20%] w-3/4 h-3/4 opacity-50 dark:opacity-80 transition-transform group-hover:scale-105">
+                <!-- Decorative Bar Chart Graphic -->
+                <div class="flex items-end gap-3 h-full pt-12">
+                    <div class="w-12 h-[40%] bg-blue-500/80 rounded-t-lg"></div>
+                    <div class="w-12 h-[70%] bg-cyan-500/80 rounded-t-lg"></div>
+                    <div class="w-12 h-[30%] bg-indigo-500/80 rounded-t-lg"></div>
+                    <div class="w-12 h-[90%] bg-emerald-500/80 rounded-t-lg"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bento 2: The Trust Vault -->
+        <div class="bg-gradient-to-br from-slate-100 to-white dark:from-slate-800 dark:to-slate-900 border border-gray-200 dark:border-slate-800 rounded-3xl p-8 relative overflow-hidden group hover:border-blue-500/50 transition-colors shadow-lg flex flex-col justify-between">
+            <div>
+                <div class="w-12 h-12 bg-blue-100 dark:bg-blue-500/20 rounded-xl flex items-center justify-center mb-4 text-blue-500"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg></div>
+                <h3 class="text-xl font-extrabold text-gray-900 dark:text-white mb-2">The Trust Vault</h3>
+                <p class="text-sm text-gray-600 dark:text-gray-400 font-medium">Track personal debts, IOUs, and social lending with absolute clarity.</p>
+            </div>
+        </div>
+
+        <!-- Bento 3: Live Exchange Rates -->
+        <div class="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-gray-200 dark:border-slate-800 rounded-3xl p-8 relative overflow-hidden group hover:border-emerald-500/50 transition-colors shadow-lg">
+            <h3 class="text-xl font-extrabold text-gray-900 dark:text-white mb-2">Global Liquidity</h3>
+            <p class="text-sm text-gray-600 dark:text-gray-400 font-medium mb-6">Switch your entire dashboard between currencies with real-time API sync.</p>
+            <div class="flex flex-wrap gap-2">
+                <span class="px-3 py-1 bg-gray-100 dark:bg-slate-800 rounded-lg text-xs font-bold text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-slate-700">CNY (¥)</span>
+                <span class="px-3 py-1 bg-gray-100 dark:bg-slate-800 rounded-lg text-xs font-bold text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-slate-700">USD ($)</span>
+                <span class="px-3 py-1 bg-gray-100 dark:bg-slate-800 rounded-lg text-xs font-bold text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-slate-700">EUR (€)</span>
+                <span class="px-3 py-1 bg-gray-100 dark:bg-slate-800 rounded-lg text-xs font-bold text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-slate-700">MAD (د.م.)</span>
+            </div>
+        </div>
+
+        <!-- Bento 4: Speed of Entry Showcase -->
+        <div class="md:col-span-2 bg-gray-900 dark:bg-black border border-gray-800 rounded-3xl p-8 relative overflow-hidden group shadow-lg flex items-center justify-between">
+            <div class="relative z-10 w-full md:w-1/2">
+                <div class="inline-flex items-center gap-2 px-3 py-1 mb-4 rounded-full bg-cyan-500/10 text-cyan-400 text-[10px] font-bold uppercase tracking-wider border border-cyan-500/20">Speed Focused</div>
+                <h3 class="text-3xl font-extrabold text-white mb-2">Log it in 3 seconds.</h3>
+                <p class="text-gray-400 font-medium mb-6">Our custom Quick Log modal lets you bypass loading screens. Enter your expense, hit save, and your dashboard updates instantly.</p>
+            </div>
+            <!-- Video Placeholder for the Quick Log -->
+            <div class="hidden md:block absolute right-[-5%] top-1/2 transform -translate-y-1/2 w-[60%] h-[120%] rotate-[-5deg] transition-transform group-hover:rotate-0 group-hover:scale-105 duration-500">
+                <div class="w-full h-full bg-slate-800 border-4 border-slate-700 rounded-3xl shadow-2xl overflow-hidden flex items-center justify-center">
+                    <!-- Replace with your 3-second quick log GIF/MP4 -->
+                    <span class="text-slate-500 font-bold uppercase tracking-widest text-xs">Insert Quick Log Video</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ==========================================
+     5. TERMINAL CTA (MAGNETIC)
+========================================== -->
+<div class="relative w-full max-w-5xl mx-auto px-4 sm:px-6 py-32 text-center scroll-reveal mb-20">
+    <div class="absolute inset-0 bg-gradient-to-b from-transparent via-cyan-500/5 to-transparent pointer-events-none"></div>
+
+    <h2 class="text-4xl sm:text-6xl font-black text-gray-900 dark:text-white tracking-tight mb-8 drop-shadow-sm">
+        {% if user.is_authenticated %}
+            Welcome back, <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 to-blue-500 capitalize">{{ user.username }}</span>.
+        {% else %}
+            Take absolute control of <br> your financial architecture.
+        {% endif %}
+    </h2>
+
+    <div class="flex flex-col sm:flex-row items-center justify-center gap-5 w-full sm:w-auto">
+        {% if user.is_authenticated %}
+            <a href="{% url 'dashboard' %}" class="w-full sm:w-auto bg-cyan-500 hover:bg-cyan-400 text-white px-12 py-5 rounded-2xl font-black text-xl shadow-[0_0_30px_rgba(6,182,212,0.5)] transition-all duration-300 hover:scale-110">
+                Launch Dashboard
+            </a>
+        {% else %}
+            <a href="{% url 'register' %}" class="w-full sm:w-auto bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-12 py-5 rounded-2xl font-black text-xl shadow-2xl transition-all duration-300 hover:scale-110 hover:bg-gray-800 dark:hover:bg-gray-100">
+                Launch Your Free Dashboard
+            </a>
+        {% endif %}
+    </div>
+
+    {% if not user.is_authenticated %}
+        <p class="text-gray-500 dark:text-gray-500 font-bold mt-6 text-sm tracking-wide">Setup in 30 seconds. Free forever.</p>
+    {% endif %}
+</div>
+
+<!-- ==========================================
+     SCRIPTS
+========================================== -->
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // 1. Scroll Reveal Animations
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                }
+            });
+        }, { threshold: 0.1, rootMargin: "0px 0px -50px 0px" });
+
+        document.querySelectorAll('.scroll-reveal').forEach((el) => observer.observe(el));
+
+        // 2. Interactive Image Slider Logic
+        const container = document.getElementById('compare-container');
+        const overlay = document.getElementById('compare-overlay');
+        const handle = document.getElementById('compare-handle');
+
+        if(container && overlay && handle) {
+            let isDragging = false;
+
+            const slide = (xPos) => {
+                const rect = container.getBoundingClientRect();
+                let x = xPos - rect.left;
+
+                // Keep handle inside container
+                if (x < 0) x = 0;
+                if (x > rect.width) x = rect.width;
+
+                const percentage = (x / rect.width) * 100;
+
+                // Update clip-path and handle position
+                overlay.style.clipPath = `polygon(0 0, ${percentage}% 0, ${percentage}% 100%, 0 100%)`;
+                handle.style.left = `${percentage}%`;
+            };
+
+            // Mouse Events
+            container.addEventListener('mousedown', (e) => { isDragging = true; slide(e.clientX); });
+            window.addEventListener('mouseup', () => { isDragging = false; });
+            window.addEventListener('mousemove', (e) => { if (isDragging) slide(e.clientX); });
+
+            // Touch Events for Mobile
+            container.addEventListener('touchstart', (e) => { isDragging = true; slide(e.touches[0].clientX); });
+            window.addEventListener('touchend', () => { isDragging = false; });
+            window.addEventListener('touchmove', (e) => {
+                if (isDragging) {
+                    e.preventDefault(); // Prevent scrolling while sliding
+                    slide(e.touches[0].clientX);
+                }
+            }, { passive: false });
+        }
+    });
+</script>
+{% endblock %}

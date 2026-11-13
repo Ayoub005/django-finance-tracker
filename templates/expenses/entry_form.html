@@ -1,0 +1,343 @@
+{% extends 'expenses/base.html' %}
+{% block content %}
+
+<!-- Include Flatpickr library -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<!-- PAGE TRANSITIONS & STAGGERED LOADING CSS -->
+<style>
+    .animate-pop-up { animation: popUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; transform: translateY(30px); }
+    @keyframes popUp { to { opacity: 1; transform: translateY(0); } }
+
+    /* Fix Browser Autofill breaking the dark glassmorphism */
+    input:-webkit-autofill, input:-webkit-autofill:hover, 
+    input:-webkit-autofill:focus, input:-webkit-autofill:active {
+        transition: background-color 5000s ease-in-out 0s;
+        -webkit-text-fill-color: inherit !important;
+        font-family: 'Plus Jakarta Sans', sans-serif !important;
+        caret-color: #06b6d4 !important;
+    }
+    html.dark input:-webkit-autofill { -webkit-text-fill-color: #f8fafc !important; }
+
+    /* HIDE NATIVE NUMBER SPINNERS */
+    .custom-number-input::-webkit-inner-spin-button, .custom-number-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    .custom-number-input { -moz-appearance: textfield; }
+
+    /* === PRO FLATPICKR BASE STRUCTURAL STYLES === */
+    .flatpickr-calendar {
+        backdrop-filter: blur(16px) !important;
+        -webkit-backdrop-filter: blur(16px) !important;
+        border-radius: 1rem !important;
+        padding: 10px 0 !important;
+        font-family: 'Plus Jakarta Sans', sans-serif !important;
+        z-index: 100 !important;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3) !important;
+    }
+    .flatpickr-calendar.arrowTop:before, .flatpickr-calendar.arrowTop:after,
+    .flatpickr-calendar.arrowBottom:before, .flatpickr-calendar.arrowBottom:after { display: none !important; }
+    .flatpickr-calendar.arrowTop {
+        margin-top: 12px !important; 
+    }
+    .flatpickr-calendar.arrowBottom {
+        margin-top: -12px !important; 
+    }
+    .flatpickr-months .flatpickr-month { height: 40px !important; }
+    .flatpickr-current-month { font-size: 1.1rem !important; font-weight: 800 !important; padding-top: 4px !important; }
+    .flatpickr-current-month input.cur-year { font-weight: 700 !important; background: transparent !important; margin-left: 8px !important; }
+    .flatpickr-day { border-radius: 0.5rem !important; border: 1px solid transparent !important; font-weight: 500 !important; transition: all 0.2s ease !important; }
+    
+    /* === LIGHT MODE FLATPICKR === */
+    html:not(.dark) .flatpickr-calendar { background: rgba(255, 255, 255, 0.95) !important; border: 1px solid rgba(0, 0, 0, 0.1) !important; }
+    html:not(.dark) .flatpickr-months .flatpickr-month, 
+    html:not(.dark) .flatpickr-current-month input.cur-year,
+    html:not(.dark) .flatpickr-current-month { color: #1e293b !important; fill: #1e293b !important; }
+    html:not(.dark) .numInputWrapper:hover { background: rgba(0, 0, 0, 0.05) !important; border-radius: 0.5rem; }
+    html:not(.dark) .flatpickr-current-month .numInputWrapper span.arrowUp:after { border-bottom-color: #64748b !important; }
+    html:not(.dark) .flatpickr-current-month .numInputWrapper span.arrowDown:after { border-top-color: #64748b !important; }
+    html:not(.dark) .flatpickr-current-month .numInputWrapper span.arrowUp:hover:after { border-bottom-color: #0891b2 !important; }
+    html:not(.dark) .flatpickr-current-month .numInputWrapper span.arrowDown:hover:after { border-top-color: #0891b2 !important; }
+    html:not(.dark) span.flatpickr-weekday { color: #64748b !important; font-weight: 700 !important; }
+    html:not(.dark) .flatpickr-day { color: #334155 !important; }
+    html:not(.dark) .flatpickr-day:hover, html:not(.dark) .flatpickr-day:focus { background: rgba(6, 182, 212, 0.1) !important; color: #0891b2 !important; border-color: rgba(6, 182, 212, 0.2) !important; }
+    html:not(.dark) .flatpickr-day.selected { background: #06b6d4 !important; color: #ffffff !important; border-color: #06b6d4 !important; box-shadow: 0 0 10px rgba(6, 182, 212, 0.3) !important; }
+    html:not(.dark) .flatpickr-day.today { border-color: rgba(0, 0, 0, 0.1) !important; }
+    html:not(.dark) .flatpickr-day.today:hover { border-color: #06b6d4 !important; }
+    html:not(.dark) .flatpickr-prev-month, html:not(.dark) .flatpickr-next-month { fill: #64748b !important; }
+    html:not(.dark) .flatpickr-prev-month:hover svg, html:not(.dark) .flatpickr-next-month:hover svg { fill: #0891b2 !important; }
+
+    /* === DARK MODE FLATPICKR === */
+    html.dark .flatpickr-calendar { background: rgba(15, 23, 42, 0.95) !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; }
+    html.dark .flatpickr-months .flatpickr-month, 
+    html.dark .flatpickr-current-month input.cur-year,
+    html.dark .flatpickr-current-month { color: #f8fafc !important; fill: #f8fafc !important; }
+    html.dark .numInputWrapper:hover { background: rgba(255, 255, 255, 0.05) !important; border-radius: 0.5rem; }
+    html.dark .flatpickr-current-month .numInputWrapper span.arrowUp:after { border-bottom-color: #94a3b8 !important; }
+    html.dark .flatpickr-current-month .numInputWrapper span.arrowDown:after { border-top-color: #94a3b8 !important; }
+    html.dark .flatpickr-current-month .numInputWrapper span.arrowUp:hover:after { border-bottom-color: #22d3ee !important; }
+    html.dark .flatpickr-current-month .numInputWrapper span.arrowDown:hover:after { border-top-color: #22d3ee !important; }
+    html.dark span.flatpickr-weekday { color: #94a3b8 !important; font-weight: 700 !important; }
+    html.dark .flatpickr-day { color: #cbd5e1 !important; }
+    html.dark .flatpickr-day:hover, html.dark .flatpickr-day:focus { background: rgba(6, 182, 212, 0.2) !important; color: #22d3ee !important; border-color: rgba(6, 182, 212, 0.3) !important; }
+    html.dark .flatpickr-day.selected { background: #06b6d4 !important; color: #ffffff !important; border-color: #06b6d4 !important; box-shadow: 0 0 10px rgba(6, 182, 212, 0.4) !important; }
+    html.dark .flatpickr-day.today { border-color: rgba(255, 255, 255, 0.2) !important; }
+    html.dark .flatpickr-day.today:hover { border-color: #06b6d4 !important; }
+    html.dark .flatpickr-prev-month, html.dark .flatpickr-next-month { fill: #94a3b8 !important; }
+    html.dark .flatpickr-prev-month:hover svg, html.dark .flatpickr-next-month:hover svg { fill: #22d3ee !important; }
+</style>
+
+<div class="max-w-2xl mx-auto pt-8">
+    
+    <!-- Pro Glass-Morphism Container with Glowing Border -->
+    <div class="relative group animate-pop-up">
+        <div class="absolute -inset-0.5 bg-gradient-to-r from-cyan-500 via-indigo-500 to-blue-500 rounded-[2rem] blur opacity-20 dark:opacity-40 group-hover:opacity-70 transition duration-1000 pointer-events-none"></div>
+
+        <div id="formContainer" class="bg-white/80 dark:bg-slate-900/90 backdrop-blur-2xl rounded-3xl shadow-xl w-full p-8 md:p-12 relative border border-gray-200/80 dark:border-slate-800 z-10">
+
+            <!-- Header -->
+            <div class="text-center mb-10">
+                <h2 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-600 to-blue-600 dark:from-cyan-400 dark:to-blue-400 tracking-tight mb-3">Quick Entry</h2>
+                <p class="text-gray-500 dark:text-gray-400 font-medium">Log a new transaction manually</p>
+            </div>
+
+            <!-- The Form -->
+            <form id="standaloneForm" method="POST" action="{% url 'quick_entry' %}" class="space-y-6">
+                {% csrf_token %}
+
+                <div class="flex flex-col sm:flex-row gap-6 relative z-50">
+                    <div class="flex-1">
+                        <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Amount</label>
+                        <div class="relative">
+                            <input type="number" id="amountInput" step="0.01" name="amount" required class="custom-number-input w-full bg-white/60 dark:bg-white/5 backdrop-blur-md border border-gray-200/80 dark:border-white/10 text-gray-900 dark:text-white rounded-xl pl-4 pr-12 py-3 text-lg font-semibold focus:bg-white dark:focus:bg-white/10 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 focus:outline-none transition-all">
+                            <div class="absolute inset-y-0 right-2 flex flex-col justify-center">
+                                <button type="button" onclick="document.getElementById('amountInput').stepUp()" class="text-gray-400 hover:text-cyan-500 transition-colors focus:outline-none p-1">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 15l7-7 7 7"></path></svg>
+                                </button>
+                                <button type="button" onclick="document.getElementById('amountInput').stepDown()" class="text-gray-400 hover:text-cyan-500 transition-colors focus:outline-none p-1 -mt-1">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="w-full sm:w-1/3">
+                        <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Currency</label>
+                        <select name="currency" class="custom-select w-full">
+                            <option value="CNY">CNY</option>
+                            <option value="SGD">SGD</option>
+                            <option value="MAD">MAD</option>
+                            <option value="EUR">EUR</option>
+                            <option value="USD">USD</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="relative z-40">
+                    <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Date</label>
+                    <div class="relative">
+                        <input type="text" id="datePicker" name="date" required placeholder="Select Date" class="w-full bg-white/60 dark:bg-white/5 backdrop-blur-md border border-gray-200/80 dark:border-white/10 text-gray-900 dark:text-white rounded-xl pl-4 pr-12 py-3 font-semibold focus:bg-white dark:focus:bg-white/10 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 focus:outline-none transition-all cursor-pointer">
+                        <div class="absolute inset-y-0 right-4 flex items-center pointer-events-none">
+                            <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex flex-col sm:flex-row gap-6 relative z-30">
+                    <div class="flex-1">
+                        <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Category</label>
+                        <select name="category" class="custom-select w-full">
+                            <option value="Food & Dining">Food & Dining</option>
+                            <option value="Housing & Utilities">Housing & Utilities</option>
+                            <option value="Academics">Academics</option>
+                            <option value="Transportation">Transportation</option>
+                            <option value="Lifestyle & Entertainment">Lifestyle & Entertainment</option>
+                        </select>
+                    </div>
+                    <div class="flex-1 relative z-20">
+                        <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Project</label>
+                        <input type="text" name="project" placeholder="Optional" class="w-full bg-white/60 dark:bg-white/5 backdrop-blur-md border border-gray-200/80 dark:border-white/10 text-gray-900 dark:text-white rounded-xl px-4 py-3 font-semibold placeholder-gray-400 dark:placeholder-slate-400 focus:bg-white dark:focus:bg-white/10 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 focus:outline-none transition-all">
+                    </div>
+                </div>
+
+                <div class="relative z-10">
+                    <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Payment Method</label>
+                    <select name="payment_method" class="custom-select w-full">
+                        <option value="WeChat Pay">WeChat Pay</option>
+                        <option value="Alipay">Alipay</option>
+                        <option value="Cash">Cash</option>
+                        <option value="Bank Card">Bank Card</option>
+                    </select>
+                </div>
+
+                <div class="relative z-0">
+                    <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Notes</label>
+                    <input type="text" name="notes" placeholder="Optional details" class="w-full bg-white/60 dark:bg-white/5 backdrop-blur-md border border-gray-200/80 dark:border-white/10 text-gray-900 dark:text-white rounded-xl px-4 py-3 font-semibold placeholder-gray-400 dark:placeholder-slate-400 focus:bg-white dark:focus:bg-white/10 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 focus:outline-none transition-all">
+                </div>
+
+                <hr class="border-gray-200/50 dark:border-slate-800 my-8">
+
+                <div class="flex justify-between items-center relative z-0">
+                    <a href="{% url 'dashboard' %}" class="px-6 py-3 rounded-xl font-bold text-gray-600 dark:text-gray-400 hover:text-cyan-600 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-800 transition-all duration-300">
+                        Back to Dashboard
+                    </a>
+                    <button type="submit" id="submitBtn" class="bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-10 py-4 rounded-xl font-bold shadow-lg text-lg transition-all duration-300 transform hover:-translate-y-1 hover:shadow-xl hover:shadow-cyan-500/40 flex items-center justify-center">
+                        Save Expense
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Async Stay-on-Page Script & Flatpickr Initialization -->
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        
+        // Initialize PRO Flatpickr Date Picker
+        const datePicker = flatpickr("#datePicker", {
+            defaultDate: "today",
+            dateFormat: "Y-m-d", // Django format
+            disableMobile: true, // Forces our custom styled calendar on mobile
+            animate: true,
+            monthSelectorType: "static" // Keeps the month title clean and static
+        });
+
+        const form = document.getElementById('standaloneForm');
+        const submitBtn = document.getElementById('submitBtn');
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            submitBtn.innerHTML = `
+                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Saving...
+            `;
+            submitBtn.disabled = true;
+
+            const formData = new FormData(form);
+
+            fetch(form.action, { method: 'POST', body: formData })
+            .then(response => {
+                if (response.ok) {
+                    submitBtn.innerHTML = 'Saved Successfully! ✓';
+                    submitBtn.classList.remove('from-cyan-500', 'to-blue-600');
+                    submitBtn.classList.add('from-emerald-500', 'to-emerald-600', 'shadow-emerald-500/40');
+
+                    form.reset();
+
+                    // Reset Date to today after submit
+                    datePicker.setDate("today");
+
+                    // Reset all custom select spans back to their first option visually
+                    document.querySelectorAll('select.custom-select').forEach(sel => {
+                        const firstOpt = sel.options[0];
+                        if(firstOpt) {
+                            const btnSpan = sel.previousElementSibling.querySelector('span');
+                            if(btnSpan) btnSpan.innerText = firstOpt.text;
+                        }
+                    });
+
+                    setTimeout(() => {
+                        submitBtn.innerHTML = 'Save Expense';
+                        submitBtn.classList.remove('from-emerald-500', 'to-emerald-600', 'shadow-emerald-500/40');
+                        submitBtn.classList.add('from-cyan-500', 'to-blue-600');
+                        submitBtn.disabled = false;
+                    }, 1500);
+                } else {
+                    submitBtn.innerHTML = 'Error - Try Again';
+                    submitBtn.disabled = false;
+                }
+            })
+            .catch(error => {
+                submitBtn.innerHTML = 'Save Expense';
+                submitBtn.disabled = false;
+            });
+        });
+    });
+</script>
+
+<!-- MAGIC: Advanced Glassmorphic Select Replacement Script -->
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const selects = document.querySelectorAll('select.custom-select');
+        
+        selects.forEach(select => {
+            select.style.display = 'none';
+            
+            const wrapper = document.createElement('div');
+            wrapper.className = 'relative inline-block w-full z-50';
+            
+            select.parentNode.insertBefore(wrapper, select);
+            wrapper.appendChild(select);
+            
+            const activeOption = select.options[select.selectedIndex]?.text || 'Select...';
+            
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'flex items-center justify-between w-full bg-white/60 dark:bg-white/5 backdrop-blur-xl border border-gray-200/80 dark:border-white/10 text-gray-800 dark:text-gray-200 px-4 py-3 rounded-xl shadow-sm hover:shadow-md focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/50 transition-all font-semibold';
+            button.innerHTML = `<span class="truncate pr-2 pointer-events-none">${activeOption}</span> <svg class="w-4 h-4 text-cyan-500 transition-transform duration-300 flex-shrink-0 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>`;
+            
+            const menu = document.createElement('ul');
+            menu.className = 'absolute z-[100] w-full mt-2 bg-white/95 dark:bg-slate-800/95 backdrop-blur-3xl border border-gray-200/50 dark:border-white/10 rounded-xl shadow-2xl opacity-0 invisible translate-y-[-10px] transition-all duration-300 flex flex-col p-1.5 max-h-64 overflow-y-auto transform-gpu';
+            
+            Array.from(select.options).forEach(option => {
+                const li = document.createElement('li');
+                li.className = 'px-3 py-2.5 rounded-lg cursor-pointer text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-cyan-500/10 hover:text-cyan-600 dark:hover:bg-cyan-500/20 dark:hover:text-cyan-300 transition-all flex items-center justify-between';
+                li.innerText = option.text;
+                
+                if (option.selected) li.classList.add('bg-cyan-500/10', 'text-cyan-600', 'dark:text-cyan-400');
+
+                li.onclick = (e) => {
+                    e.stopPropagation();
+                    select.value = option.value;
+                    button.querySelector('span').innerText = option.text;
+                    
+                    Array.from(menu.children).forEach(child => child.classList.remove('bg-cyan-500/10', 'text-cyan-600', 'dark:text-cyan-400'));
+                    li.classList.add('bg-cyan-500/10', 'text-cyan-600', 'dark:text-cyan-400');
+                    
+                    menu.classList.add('opacity-0', 'invisible', 'translate-y-[-10px]');
+                    button.querySelector('svg').classList.remove('rotate-180');
+                    menu.classList.remove('is-open');
+                    wrapper.style.zIndex = '50'; 
+                };
+                menu.appendChild(li);
+            });
+            
+            wrapper.appendChild(button);
+            wrapper.appendChild(menu);
+            
+            button.onclick = (e) => {
+                e.stopPropagation();
+                const isClosed = menu.classList.contains('opacity-0');
+                
+                document.querySelectorAll('.is-open').forEach(m => {
+                    m.classList.add('opacity-0', 'invisible', 'translate-y-[-10px]');
+                    m.previousElementSibling.querySelector('svg').classList.remove('rotate-180');
+                    m.classList.remove('is-open');
+                    m.parentElement.style.zIndex = '50';
+                });
+                
+                if (isClosed) {
+                    menu.classList.remove('opacity-0', 'invisible', 'translate-y-[-10px]');
+                    button.querySelector('svg').classList.add('rotate-180');
+                    menu.classList.add('is-open');
+                    wrapper.style.zIndex = '60'; 
+                }
+            };
+        });
+        
+        document.addEventListener('click', () => {
+            document.querySelectorAll('.is-open').forEach(menu => {
+                menu.classList.add('opacity-0', 'invisible', 'translate-y-[-10px]');
+                menu.previousElementSibling.querySelector('svg').classList.remove('rotate-180');
+                menu.classList.remove('is-open');
+                menu.parentElement.style.zIndex = '50';
+            });
+        });
+    });
+</script>
+{% endblock %}

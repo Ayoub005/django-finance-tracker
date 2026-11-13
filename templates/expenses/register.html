@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en" class="transition-colors duration-500">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Account - Finance Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Tailwind Dark Mode Config -->
+    <script>
+        tailwind.config = { darkMode: 'class' }
+    </script>
+
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='100%25' x2='100%25' y2='0%25'%3E%3Cstop offset='0%25' stop-color='%2306b6d4'/%3E%3Cstop offset='100%25' stop-color='%233b82f6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='25' fill='url(%23g)'/%3E%3Cpath d='M 26 58 L 42 42 L 54 54 L 72 36 L 72 50 M 72 36 L 58 36' fill='none' stroke='white' stroke-width='10' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            animation: globalFadeIn 0.8s ease-out forwards;
+        }
+        @keyframes globalFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .modal-enter { animation: modalDrop 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; opacity: 0; transform: scale(0.9) translateY(-40px); }
+        @keyframes modalDrop { to { opacity: 1; transform: scale(1) translateY(0); } }
+
+        @keyframes float {
+            0% { transform: translateY(0px) translateX(0px); }
+            50% { transform: translateY(-30px) translateX(20px); }
+            100% { transform: translateY(0px) translateX(0px); }
+        }
+        .animate-float { animation: float 8s ease-in-out infinite; }
+        .animate-float-delayed { animation: float 8s ease-in-out 3s infinite; }
+
+        /* Autofill Styling */
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover,
+        input:-webkit-autofill:focus,
+        input:-webkit-autofill:active {
+            transition: background-color 5000s ease-in-out 0s;
+            -webkit-text-fill-color: #0f172a !important;
+            font-family: 'Plus Jakarta Sans', sans-serif !important;
+            caret-color: #06b6d4 !important;
+        }
+        html.dark input:-webkit-autofill,
+        html.dark input:-webkit-autofill:hover,
+        html.dark input:-webkit-autofill:focus,
+        html.dark input:-webkit-autofill:active {
+            -webkit-text-fill-color: #f8fafc !important;
+        }
+
+        /* Pro Floating Input Styling */
+        .pro-floating-wrapper {
+            position: relative;
+            border-radius: 0.875rem;
+            transition: all 0.3s ease;
+            background-color: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(226, 232, 240, 0.9);
+        }
+        html.dark .pro-floating-wrapper {
+            background-color: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(51, 65, 85, 0.6);
+        }
+        .pro-floating-wrapper:focus-within {
+            background-color: #ffffff;
+            border-color: #06b6d4;
+            box-shadow: 0 0 0 1px #06b6d4, 0 10px 15px -3px rgba(6, 182, 212, 0.15);
+        }
+        html.dark .pro-floating-wrapper:focus-within {
+            background-color: rgba(15, 23, 42, 0.95);
+            border-color: #06b6d4;
+            box-shadow: 0 0 0 1px #06b6d4, 0 10px 15px -3px rgba(6, 182, 212, 0.2);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-[#020617] flex items-center justify-center min-h-screen relative overflow-x-hidden p-3 py-8 sm:p-4 sm:py-12 transition-colors duration-500 selection:bg-cyan-300 selection:text-cyan-900">
+
+    <!-- Global Ambient Glows -->
+    <div class="fixed top-[-10%] left-[-10%] w-[600px] h-[600px] bg-cyan-400/30 dark:bg-cyan-600/20 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-[120px] animate-float pointer-events-none -z-10"></div>
+    <div class="fixed bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-indigo-400/20 dark:bg-indigo-600/20 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-[120px] animate-float-delayed pointer-events-none -z-10"></div>
+
+    <!-- Standalone Floating Theme Toggle -->
+    <button onclick="toggleDarkMode()" class="absolute top-4 right-4 sm:top-8 sm:right-8 p-3 rounded-2xl bg-white/60 dark:bg-slate-800/60 backdrop-blur-xl text-cyan-600 dark:text-cyan-400 hover:scale-110 transition-all duration-300 border border-cyan-200/50 dark:border-cyan-700/50 shadow-lg z-50 flex items-center justify-center">
+        <svg id="sunIcon" class="w-5 h-5 sm:w-6 sm:h-6 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+        <svg id="moonIcon" class="w-5 h-5 sm:w-6 sm:h-6 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+    </button>
+
+    <!-- Glass-Morphism Registration Card Container -->
+    <div class="relative group w-full max-w-md modal-enter">
+
+        <!-- Animated Gradient Glow Border -->
+        <div class="absolute -inset-0.5 bg-gradient-to-r from-cyan-500 via-indigo-500 to-blue-500 rounded-[2.2rem] blur opacity-30 dark:opacity-40 group-hover:opacity-60 transition duration-1000 pointer-events-none"></div>
+
+        <!-- Main Glass Card -->
+        <div class="relative bg-white/90 dark:bg-slate-950/90 backdrop-blur-2xl p-5 sm:p-9 rounded-[2rem] shadow-2xl border border-white/50 dark:border-slate-800/80 z-10 overflow-hidden">
+
+            <!-- Inner Corner Glow -->
+            <div class="absolute -top-10 -right-10 w-36 h-36 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+            <div class="text-center mb-6 sm:mb-8">
+                <!-- Syncs with Dashboard Logo -->
+                <div class="mx-auto w-12 h-12 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/40 border border-white/30 p-2.5 mb-3 sm:mb-4 transform rotate-3 hover:rotate-6 transition-transform duration-300">
+                    <svg class="w-full h-full text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline>
+                        <polyline points="16 7 22 7 22 13"></polyline>
+                    </svg>
+                </div>
+
+                <h2 class="text-2xl sm:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-600 to-blue-700 dark:from-cyan-400 dark:to-blue-500 tracking-tight pb-0.5">
+                    Create Account
+                </h2>
+                <p class="text-gray-500 dark:text-gray-400 mt-1 text-xs sm:text-sm font-medium">Join and start tracking your finances</p>
+            </div>
+
+            <!-- Non-field / Top-level Form Errors -->
+            {% if form.non_field_errors %}
+                <div class="mb-4 p-3 bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 rounded-xl text-xs font-bold backdrop-blur-sm">
+                    {% for error in form.non_field_errors %}
+                        <p class="flex items-center gap-1.5">
+                            <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            {{ error }}
+                        </p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <form method="POST" class="space-y-3 sm:space-y-4 relative z-20">
+                {% csrf_token %}
+
+                <!-- Floating Field: Username -->
+                <div>
+                    <div class="pro-floating-wrapper">
+                        <input type="text" name="username" required id="id_username" placeholder=" " value="{{ form.username.value|default:'' }}" class="block w-full px-4 pt-5 pb-1.5 sm:px-5 sm:pt-6 sm:pb-2 text-sm sm:text-base text-gray-900 dark:text-white bg-transparent border-none appearance-none focus:outline-none focus:ring-0 peer">
+                        <label for="id_username" class="absolute text-[10px] sm:text-xs font-bold text-gray-400 dark:text-slate-500 duration-300 transform -translate-y-2.5 sm:-translate-y-3 scale-75 top-3.5 sm:top-4 z-10 origin-[0] left-4 sm:left-5 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-2.5 sm:peer-focus:-translate-y-3 peer-focus:text-cyan-500 uppercase tracking-wider pointer-events-none">Username</label>
+                    </div>
+                    {% for error in form.username.errors %}
+                        <p class="text-[11px] text-red-500 dark:text-red-400 mt-1 font-bold pl-1 flex items-center gap-1">
+                            <svg class="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            {{ error }}
+                        </p>
+                    {% endfor %}
+                </div>
+
+                <!-- Floating Field: Email -->
+                <div>
+                    <div class="pro-floating-wrapper">
+                        <input type="email" name="email" required id="id_email" placeholder=" " value="{{ form.email.value|default:'' }}" class="block w-full px-4 pt-5 pb-1.5 sm:px-5 sm:pt-6 sm:pb-2 text-sm sm:text-base text-gray-900 dark:text-white bg-transparent border-none appearance-none focus:outline-none focus:ring-0 peer">
+                        <label for="id_email" class="absolute text-[10px] sm:text-xs font-bold text-gray-400 dark:text-slate-500 duration-300 transform -translate-y-2.5 sm:-translate-y-3 scale-75 top-3.5 sm:top-4 z-10 origin-[0] left-4 sm:left-5 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-2.5 sm:peer-focus:-translate-y-3 peer-focus:text-cyan-500 uppercase tracking-wider pointer-events-none">Email Address</label>
+                    </div>
+                    {% for error in form.email.errors %}
+                        <p class="text-[11px] text-red-500 dark:text-red-400 mt-1 font-bold pl-1 flex items-center gap-1">
+                            <svg class="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            {{ error }}
+                        </p>
+                    {% endfor %}
+                </div>
+
+                <!-- Floating Field: Password 1 -->
+                <div>
+                    <div class="pro-floating-wrapper">
+                        <input type="password" name="password" required id="id_password" placeholder=" " class="block w-full px-4 pt-5 pb-1.5 sm:px-5 sm:pt-6 sm:pb-2 text-sm sm:text-base text-gray-900 dark:text-white bg-transparent border-none appearance-none focus:outline-none focus:ring-0 peer">
+                        <label for="id_password" class="absolute text-[10px] sm:text-xs font-bold text-gray-400 dark:text-slate-500 duration-300 transform -translate-y-2.5 sm:-translate-y-3 scale-75 top-3.5 sm:top-4 z-10 origin-[0] left-4 sm:left-5 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-2.5 sm:peer-focus:-translate-y-3 peer-focus:text-cyan-500 uppercase tracking-wider pointer-events-none">Password</label>
+                    </div>
+                    {% for error in form.password.errors %}
+                        <p class="text-[11px] text-red-500 dark:text-red-400 mt-1 font-bold pl-1 flex items-center gap-1">
+                            <svg class="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            {{ error }}
+                        </p>
+                    {% endfor %}
+                </div>
+
+                <!-- Floating Field: Password 2 (Handles either password_confirmation or password2) -->
+                <div>
+                    <div class="pro-floating-wrapper">
+                        <input type="password" name="{% if 'password2' in form.fields %}password2{% else %}password_confirmation{% endif %}" required id="id_password2" placeholder=" " class="block w-full px-4 pt-5 pb-1.5 sm:px-5 sm:pt-6 sm:pb-2 text-sm sm:text-base text-gray-900 dark:text-white bg-transparent border-none appearance-none focus:outline-none focus:ring-0 peer">
+                        <label for="id_password2" class="absolute text-[10px] sm:text-xs font-bold text-gray-400 dark:text-slate-500 duration-300 transform -translate-y-2.5 sm:-translate-y-3 scale-75 top-3.5 sm:top-4 z-10 origin-[0] left-4 sm:left-5 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-2.5 sm:peer-focus:-translate-y-3 peer-focus:text-cyan-500 uppercase tracking-wider pointer-events-none">Confirm Password</label>
+                    </div>
+                    {% for error in form.password2.errors %}
+                        <p class="text-[11px] text-red-500 dark:text-red-400 mt-1 font-bold pl-1 flex items-center gap-1">
+                            <svg class="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            {{ error }}
+                        </p>
+                    {% endfor %}
+                    {% for error in form.password_confirmation.errors %}
+                        <p class="text-[11px] text-red-500 dark:text-red-400 mt-1 font-bold pl-1 flex items-center gap-1">
+                            <svg class="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            {{ error }}
+                        </p>
+                    {% endfor %}
+                </div>
+
+                <div class="pt-2 sm:pt-3">
+                    <button type="submit" class="w-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white py-3 sm:py-3.5 rounded-xl font-bold text-sm sm:text-base shadow-lg shadow-cyan-500/30 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-cyan-500/50">
+                        Sign Up
+                    </button>
+                </div>
+            </form>
+
+            <div class="mt-5 sm:mt-7 text-center text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 border-t border-gray-200/50 dark:border-slate-800/80 pt-4 sm:pt-5 relative z-20">
+                Already have an account?
+                <a href="{% url 'login' %}" class="text-cyan-600 dark:text-cyan-400 hover:text-blue-600 dark:hover:text-blue-400 font-extrabold transition-colors hover:underline ml-1">
+                    Sign in here
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Theme Synchronization & Toggle Script -->
+    <script>
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+
+        function toggleDarkMode() {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+    </script>
+</body>
+</html>
