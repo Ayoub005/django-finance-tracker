@@ -131,16 +131,14 @@ DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 
 # Email Configuration linked to .env vault
-MAILERS = {
-    'default': {
-        'BACKEND': 'django.core.mail.backends.smtp.EmailBackend',
-        'HOST': 'smtp.gmail.com',
-        'PORT': 587,
-        'USE_TLS': True,
-        'USER': env('EMAIL_USER'),
-        'PASSWORD': env('EMAIL_PASSWORD'),
-    }
-}
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = env('EMAIL_USER')
+EMAIL_HOST_PASSWORD = env('EMAIL_PASSWORD')
+
+
 DEFAULT_FROM_EMAIL = f"Finance Tracker <{env('EMAIL_USER')}>"
 
 LOGIN_URL = '/login/'
