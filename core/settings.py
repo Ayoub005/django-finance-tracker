@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'expenses',
     'cloudinary_storage',
     'cloudinary',
+    'anymail',
 ]
 
 MIDDLEWARE = [
@@ -130,13 +131,11 @@ MEDIA_URL = '/media/'
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 
-# Email Configuration linked to .env vault
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = env('EMAIL_USER')
-EMAIL_HOST_PASSWORD = env('EMAIL_PASSWORD')
+# HTTP Email Configuration (Bypasses Render Port Block)
+ANYMAIL = {
+    "BREVO_API_KEY": env('BREVO_API_KEY'),
+}
+EMAIL_BACKEND = "anymail.backends.brevo.EmailBackend"
 
 
 DEFAULT_FROM_EMAIL = f"Finance Tracker <{env('EMAIL_USER')}>"
