@@ -8,6 +8,9 @@ import os
 import environ
 from pathlib import Path
 import dj_database_url
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -36,6 +39,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'expenses',
+    'cloudinary_storage',
+    'cloudinary',
 ]
 
 MIDDLEWARE = [
@@ -46,6 +51,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 
 ROOT_URLCONF = 'core.urls'
@@ -101,21 +107,27 @@ USE_I18N = True
 USE_TZ = False
 
 
+# Cloudinary Configuration
+cloudinary.config( 
+  cloud_name = "xkysaqa3", 
+  api_key = "271625463382512", 
+  api_secret = "OwerpSu4Vz6RjpStTDlvxHUpYKM",
+  secure = True
+)
+
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = 'static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'static')
-
-# The destination folder for production deployment
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-
-# The working folder where you put your custom images
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
 ]
 
+# Production Static File Handling (Whitenoise)
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
 # Media files (User-uploaded avatars, receipts, etc.)
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 
 # Email Configuration linked to .env vault
