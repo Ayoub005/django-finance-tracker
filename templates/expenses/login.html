@@ -66,8 +66,15 @@
                 </p>
             </div>
 
-            <form method="POST" class="space-y-5">
+            <form action="{% url 'login' %}" method="POST" class="space-y-5">
                 {% csrf_token %}
+                
+                {% if form.errors or form.non_field_errors %}
+                <div class="p-3 bg-red-950/40 border border-red-900/50 text-red-400 rounded-xl text-xs font-bold text-center">
+                    {{ form.non_field_errors }}
+                    {{ form.errors }}
+                </div>
+                {% endif %}
 
                 <!-- Username Input -->
                 <div class="relative group pro-input rounded-xl animate-fade-up delay-200">
