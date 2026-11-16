@@ -28,6 +28,11 @@ DEBUG = True
 ALLOWED_HOSTS = ['django-finance-tracker-yo0z.onrender.com', '127.0.0.1', 'localhost']
 CSRF_TRUSTED_ORIGINS = ['https://django-finance-tracker-yo0z.onrender.com']
 
+# Render HTTPS Proxy Settings for Login Sessions
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+
 
 # Application definition
 
