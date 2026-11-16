@@ -26,6 +26,7 @@ SECRET_KEY = env('SECRET_KEY')
 DEBUG = True
 
 ALLOWED_HOSTS = ['django-finance-tracker-yo0z.onrender.com', '127.0.0.1', 'localhost']
+CSRF_TRUSTED_ORIGINS = ['https://django-finance-tracker-yo0z.onrender.com']
 
 
 # Application definition
