@@ -17,7 +17,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Initialize environment variables
 env = environ.Env()
-environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
+environ.Env.read_env(os.path.join(BASE_DIR, '.env'), overwrite=True)
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = env('SECRET_KEY')
@@ -48,9 +48,13 @@ INSTALLED_APPS = [
     'cloudinary_storage',
     'cloudinary',
     'anymail',
+    'rest_framework',
+    'rest_framework.authtoken',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -139,7 +143,7 @@ DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 # HTTP Email Configuration (Bypasses Render Port Block)
 ANYMAIL = {
-    "BREVO_API_KEY": env('BREVO_API_KEY'),
+    "BREVO_API_KEY": env('BREVO_API_KEY', default=''),
 }
 EMAIL_BACKEND = "anymail.backends.brevo.EmailBackend"
 
@@ -155,3 +159,15 @@ AUTHENTICATION_BACKENDS = [
     'expenses.backends.EmailOrUsernameModelBackend',  # Tries email/username first
     'django.contrib.auth.backends.ModelBackend',      # Fallback default
 ]
+
+
+CORS_ALLOW_ALL_ORIGINS = True
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+}

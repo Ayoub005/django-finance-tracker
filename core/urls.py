@@ -4,8 +4,11 @@ from django.contrib.auth import views as auth_views
 from expenses import views
 from django.conf import settings
 from django.conf.urls.static import static
+from rest_framework.authtoken.views import obtain_auth_token
 
 urlpatterns = [
+    path('api/login/', obtain_auth_token, name='api_login'),
+    path('api/', include('expenses.api_urls')),
 
     path('', views.home, name='home'),
 
