@@ -45,7 +45,7 @@ class Expense(models.Model):
     amount_in_cny = models.DecimalField(max_digits=10, decimal_places=2, default=0, editable=False)
 
     date = models.DateField(default=timezone.now)
-    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES)
+    category = models.CharField(max_length=100)
     project = models.CharField(max_length=100, blank=True, null=True)
     payment_method = models.CharField(max_length=20, choices=PAYMENT_CHOICES, blank=True, null=True)
     notes = models.CharField(max_length=255, blank=True, null=True)
