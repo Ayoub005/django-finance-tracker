@@ -5,6 +5,7 @@ from django.utils import timezone
 import random
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.conf import settings
 
 class EmailVerificationOTP(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -146,3 +147,17 @@ def create_user_profile(sender, instance, created, **kwargs):
 @receiver(post_save, sender=User)
 def save_user_profile(sender, instance, **kwargs):
     instance.profile.save()
+    
+    
+    
+class UserPreference(models.Model):
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="preferences",
+    )
+    data = models.JSONField(default=dict, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Preferences for {self.user.username}"

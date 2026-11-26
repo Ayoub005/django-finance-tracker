@@ -30,6 +30,10 @@ import datetime
 import zoneinfo
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from .models import UserPreference
 
 
 
@@ -923,3 +927,19 @@ def trigger_reminders(request):
         return HttpResponse("Reminders executed successfully.")
     except Exception as e:
         return HttpResponse(f"Error: {e}", status=500)
+    
+    
+    
+@api_view(["GET", "PUT", "PATCH"])
+@permission_classes([IsAuthenticated])
+def user_preferences(request):
+    pref, _ = UserPreference.objects.get_or_create(user=request.user)
+    if request.method == "GET":
+        return Response({"data": pref.data or {}, "updated_at": pref.updated_at})
+
+    incoming = request.data.get("data", request.data)
+    if isinstance(incoming, dict):
+        merged = {**(pref.data or {}), **incoming}
+        pref.data = merged
+        pref.save()
+    return Response({"data": pref.data, "updated_at": pref.updated_at})

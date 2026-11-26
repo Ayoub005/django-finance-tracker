@@ -11,6 +11,8 @@ urlpatterns = [
     
     path("api/health/", views.health_check, name="health_check"),
     
+    path("api/preferences/", views.user_preferences, name="user_preferences"),
+    
     path('api/login/', obtain_auth_token, name='api_login'),
     path('api/', include('expenses.api_urls')),
 
