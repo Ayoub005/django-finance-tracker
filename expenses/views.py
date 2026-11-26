@@ -32,6 +32,12 @@ from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 
 
+
+def health_check(request):
+    return JsonResponse({"status": "ok"})
+
+
+
 class PreventPasswordReuseValidator:
     def validate(self, password, user=None):
         if user and check_password(password, user.password):

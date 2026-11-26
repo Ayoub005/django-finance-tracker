@@ -5,8 +5,13 @@ from expenses import views
 from django.conf import settings
 from django.conf.urls.static import static
 from rest_framework.authtoken.views import obtain_auth_token
+from .views import health_check
+
 
 urlpatterns = [
+    
+    path("api/health/", health_check, name="health_check"),
+    
     path('api/login/', obtain_auth_token, name='api_login'),
     path('api/', include('expenses.api_urls')),
 
